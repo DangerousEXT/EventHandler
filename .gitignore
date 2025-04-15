@@ -1,0 +1,41 @@
+### Python ###
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+### Django ###
+*.log
+local_settings.py  
+db.sqlite3
+db.sqlite3-journal
+
+### MySQL ###
+*.dump
+*.sql
+/mysql_data/
+
+### VSCode ###
+.vscode/
+
+### Виртуальные окружения и env-файлы ###
+.env
+.env.*
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+### Общие временные файлы ###
+*.log
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+
+### Автогенерируемые файлы ###
+*.min.js
+*.min.css
+*.css.map
