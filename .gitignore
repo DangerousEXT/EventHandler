@@ -17,6 +17,9 @@ db.sqlite3-journal
 
 ### VSCode ###
 .vscode/
+*.vsidx
+*.wsuo 
+*.suo 
 
 ### Виртуальные окружения и env-файлы ###
 .env
@@ -39,3 +42,7 @@ Thumbs.db
 *.min.js
 *.min.css
 *.css.map
+
+### JSON-кеши ###
+*.json.cache
+*.json.tmp
