@@ -39,3 +39,4 @@ Thumbs.db
 *.min.js
 *.min.css
 *.css.map
+*.vsidx

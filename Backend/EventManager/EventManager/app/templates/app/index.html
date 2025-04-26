@@ -1,0 +1,157 @@
+{% extends "app/layout.html" %}
+
+{% block content %}
+<div class="auth-container" id="auth-container">
+    <div id="login-form">
+        <h2>Login</h2>
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+        <div>
+            <input type="text" id="login-username" placeholder="Username" required>
+            <input type="password" id="login-password" placeholder="Password" required>
+            <div id="login-error" class="error"></div>
+            <button onclick="login()">Login</button>
+        </div>
+        <div class="toggle-link" onclick="showRegister()">Don't have an account? Register</div>
+    </div>
+    <div id="register-form" style="display:none;">
+        <h2>Register</h2>
+        <div>
+            <input type="text" id="register-username" placeholder="Username" required>
+            <input type="password" id="register-password" placeholder="Password" required>
+            <input type="password" id="confirm-password" placeholder="Confirm Password" required>
+            <div id="register-error" class="error"></div>
+            <button onclick="register()">Register</button>
+        </div>
+        <div class="toggle-link" onclick="showLogin()">Already have an account? Login</div>
+    </div>
+</div>
+
+<style>
+    .auth-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        width: 300px;
+        margin: 20px auto;
+    }
+
+        .auth-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .auth-container input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .auth-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+            .auth-container button:hover {
+                background-color: #165bb5;
+            }
+
+    .error {
+        color: red;
+        font-size: 12px;
+        text-align: center;
+        display: none;
+    }
+
+    .toggle-link {
+        text-align: center;
+        margin-top: 10px;
+        cursor: pointer;
+        color: #1877f2;
+    }
+</style>
+
+<script>
+    function showRegister() {
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('register-form').style.display = 'block';
+    }
+    function showLogin() {
+        document.getElementById('login-form').style.display = 'block';
+        document.getElementById('register-form').style.display = 'none';
+    }
+    async function login() {
+        const username = document.getElementById('login-username').value;
+        const password = document.getElementById('login-password').value;
+        const errorMessage = document.getElementById('login-error');
+        errorMessage.style.display = 'none';
+        if (!username || !password) {
+            errorMessage.textContent = 'Please fill in all fields';
+            errorMessage.style.display = 'block';
+            return;
+        }
+        try {
+            const response = await fetch('/api/login/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                window.location.href = data.redirect;
+            } else {
+                errorMessage.textContent = data.message;
+                errorMessage.style.display = 'block';
+            }
+        } catch (error) {
+            errorMessage.textContent = 'Server error';
+            errorMessage.style.display = 'block';
+        }
+    }
+    async function register() {
+        const username = document.getElementById('register-username').value;
+        const password = document.getElementById('register-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        const errorMessage = document.getElementById('register-error');
+        errorMessage.style.display = 'none';
+        if (!username || !password || !confirmPassword) {
+            errorMessage.textContent = 'Please fill in all fields';
+            errorMessage.style.display = 'block';
+            return;
+        }
+        if (password !== confirmPassword) {
+            errorMessage.textContent = 'Passwords do not match';
+            errorMessage.style.display = 'block';
+            return;
+        }
+        try {
+            const response = await fetch('/api/register/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, confirm_password: confirmPassword })
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                window.location.href = data.redirect;
+            } else {
+                errorMessage.textContent = data.message;
+                errorMessage.style.display = 'block';
+            }
+        } catch (error) {
+            errorMessage.textContent = 'Server error';
+            errorMessage.style.display = 'block';
+        }
+    }
+</script>
+{% endblock %}

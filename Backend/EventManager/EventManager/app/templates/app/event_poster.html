@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Poster</title>
+    <style>
+        body {
+            font-family: Arial,sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background-color: #1877f2;
+            color: white;
+        }
+
+        .search-bar {
+            padding: 5px;
+            width: 200px;
+        }
+
+        .user-profile {
+            position: relative;
+            display: inline-block;
+        }
+
+        .user-icon {
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 5px;
+        }
+
+            .dropdown a {
+                display: block;
+                padding: 10px;
+                color: black;
+                text-decoration: none;
+            }
+
+                .dropdown a:hover {
+                    background-color: #f0f0f0;
+                }
+
+        .user-profile:hover .dropdown {
+            display: block;
+        }
+
+        .event-list {
+            max-height: 500px;
+            overflow-y: auto;
+            margin: 20px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .event-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+            .event-item:last-child {
+                border-bottom: none;
+            }
+
+            .event-item img {
+                max-width: 100px;
+                max-height: 100px;
+            }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <form method="GET">
+                <input type="text" name="search" class="search-bar" placeholder="Search events..." value="{{ query }}">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        <div class="user-profile">
+            <img src="/static/images/user-icon.png" alt="User" class="user-icon">
+            <div class="dropdown">
+                {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}">Dashboard</a>
+                {% if request.session.role == 'organizer' %}
+                <a href="{% url 'create_event' %}">Create Event</a>
+                {% endif %}
+                <a href="{% url 'logout' %}">Logout</a>
+                {% else %}
+                <a href="{% url 'login_page' %}">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="event-list">
+        {% for event in events %}
+        <div class="event-item">
+            <h3>{{ event.title }}</h3>
+            <p>Category: {{ event.category }}</p>
+            <p>{{ event.description }}</p>
+            <p>Date: {{ event.date_time }}</p>
+            {% if event.image %}
+            <img src="{{ event.image.url }}" alt="{{ event.title }}">
+            {% endif %}
+        </div>
+        {% empty %}
+        <p>No events found.</p>
+        {% endfor %}
+    </div>
+</body>
+</html>

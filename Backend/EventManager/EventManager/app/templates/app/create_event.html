@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Event</title>
+    <style>
+        body {
+            font-family: Arial,sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background-color: #1877f2;
+            color: white;
+        }
+
+        .search-bar {
+            padding: 5px;
+            width: 200px;
+        }
+
+        .user-profile {
+            position: relative;
+            display: inline-block;
+        }
+
+        .user-icon {
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 5px;
+        }
+
+            .dropdown a {
+                display: block;
+                padding: 10px;
+                color: black;
+                text-decoration: none;
+            }
+
+                .dropdown a:hover {
+                    background-color: #f0f0f0;
+                }
+
+        .user-profile:hover .dropdown {
+            display: block;
+        }
+
+        .form-container {
+            margin: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 5px;
+            }
+
+            .form-group input, .form-group textarea, .form-group select {
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+
+                .form-group input[type="datetime-local"] {
+                    width: auto;
+                }
+
+        .category-dropdown {
+            position: relative;
+        }
+
+        .category-button {
+            padding: 8px;
+            width: 100%;
+            text-align: left;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .category-options {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+
+            .category-options div {
+                padding: 8px;
+                cursor: pointer;
+            }
+
+                .category-options div:hover {
+                    background-color: #f0f0f0;
+                }
+
+        .category-dropdown:hover .category-options {
+            display: block;
+        }
+
+        .error {
+            color: red;
+            margin-bottom: 10px;
+        }
+
+        .submit-button {
+            float: right;
+            padding: 10px 20px;
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+            .submit-button:disabled {
+                background-color: #cccccc;
+                cursor: not-allowed;
+            }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <input type="text" class="search-bar" placeholder="Search events..." disabled>
+        </div>
+        <div class="user-profile">
+            <img src="/static/images/user-icon.png" alt="User" class="user-icon">
+            <div class="dropdown">
+                {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}">Dashboard</a>
+                <a href="{% url 'logout' %}">Logout</a>
+                {% else %}
+                <a href="{% url 'login_page' %}">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="form-container">
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+        <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="category">Category</label>
+                <div class="category-dropdown">
+                    <div class="category-button" id="category-button">Select category</div>
+                    <div class="category-options">
+                        <div onclick="selectCategory('Sports')">Sports</div>
+                        <div onclick="selectCategory('Leisure')">Leisure</div>
+                        <div onclick="selectCategory('Education')">Education</div>
+                        <div onclick="selectCategory('Music')">Music</div>
+                    </div>
+                    <input type="hidden" name="category" id="category" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" name="title" id="title" placeholder="Title" required oninput="updatePlaceholder(this)">
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea name="description" id="description" rows="5" required placeholder="What will happen, location, contact details, etc."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="date_time">Date and Time</label>
+                <input type="datetime-local" name="date_time" id="date_time" required>
+            </div>
+            <div class="form-group">
+                <label for="image">Add Image (Optional)</label>
+                <input type="file" name="image" id="image" accept="image/*">
+            </div>
+            <button type="submit" class="submit-button" id="submit-button">Done</button>
+        </form>
+    </div>
+    <script>
+        function selectCategory(category) {
+            document.getElementById('category-button').textContent = category;
+            document.getElementById('category').value = category;
+            validateForm();
+        }
+        function updatePlaceholder(input) {
+            input.placeholder = input.value ? '' : 'Title';
+            validateForm();
+        }
+        function validateForm() {
+            const category = document.getElementById('category').value;
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const dateTime = document.getElementById('date_time').value;
+            const submitButton = document.getElementById('submit-button');
+            const isValid = category && title && description && dateTime;
+            submitButton.disabled = !isValid;
+            return isValid;
+        }
+        validateForm();
+        document.getElementById('date_time').addEventListener('input', function (e) {
+            const value = e.target.value;
+            const year = value.split('-')[0];
+            if (year.length > 4) {
+                const newYear = year.slice(0, 4);
+                const newValue = value.replace(/^\d{4,}/, newYear);
+                e.target.value = newValue;
+            }
+        });
+    </script>
+</body>
+</html>

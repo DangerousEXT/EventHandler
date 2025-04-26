@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Select Role</title>
+	<style>
+        body {
+            font-family: Arial,sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+
+        h2 {
+            margin-bottom: 40px;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .role-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+            .role-button:hover {
+                background-color: #165bb5;
+            }
+    </style>
+</head>
+<body>
+<h2>Select Role</h2>
+<form method="POST">
+	{% csrf_token %}
+	<div class="button-container">
+		<button type="submit" name="role" value="participant" class="role-button">Participant</button>
+		<button type="submit" name="role" value="organizer" class="role-button">Organizer</button>
+	</div>
+</form>
+</body>
+</html>
