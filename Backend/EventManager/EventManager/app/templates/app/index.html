@@ -1,4 +1,5 @@
 {% extends "app/layout.html" %}
+{% load static %}
 
 {% block content %}
 <div class="auth-container" id="auth-container">
@@ -8,10 +9,6 @@
         <div class="error">{{ error }}</div>
         {% endif %}
         <div>
-            <select id="login-role" class="role-select">
-                <option value="participant">Participant</option>
-                <option value="organizer">Organizer</option>
-            </select>
             <input type="text" id="login-username" placeholder="Username" required>
             <input type="password" id="login-password" placeholder="Password" required>
             <div id="login-error" class="error"></div>
@@ -22,10 +19,6 @@
     <div id="register-form" style="display:none;">
         <h2>Register</h2>
         <div>
-            <select id="register-role" class="role-select">
-                <option value="participant">Participant</option>
-                <option value="organizer">Organizer</option>
-            </select>
             <input type="text" id="register-username" placeholder="Username" required>
             <input type="password" id="register-password" placeholder="Password" required>
             <input type="password" id="confirm-password" placeholder="Confirm Password" required>
@@ -79,7 +72,7 @@
             font-size: 24px;
         }
 
-        .auth-container input, .auth-container select {
+        .auth-container input {
             width: 100%;
             padding: 12px;
             margin: 10px 0;
@@ -92,27 +85,11 @@
             transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
         }
 
-            .auth-container input:focus, .auth-container select:focus {
+            .auth-container input:focus {
                 border-color: #3B82F6;
                 background: rgba(255, 255, 255, 0.5);
                 outline: none;
             }
-
-    .role-select:hover {
-        transform: scale(1.02);
-        background: rgba(59, 130, 246, 0.4);
-    }
-
-    .role-select option {
-        background: rgba(255, 255, 255, 0.9);
-        color: #1E40AF;
-        padding: 10px;
-    }
-
-        .role-select option:hover {
-            background: rgba(59, 130, 246, 0.5);
-            color: #3B82F6;
-        }
 
     .glass-button {
         width: 100%;
@@ -161,15 +138,6 @@
 </style>
 
 <script>
-    function showRegister() {
-        document.getElementById('login-form').style.display = 'none';
-        document.getElementById('register-form').style.display = 'block';
-    }
-    function showLogin() {
-        document.getElementById('login-form').style.display = 'block';
-        document.getElementById('register-form').style.display = 'none';
-    }
-
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -187,13 +155,22 @@
 
     const csrfToken = getCookie('csrftoken');
 
+    function showRegister() {
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('register-form').style.display = 'block';
+    }
+
+    function showLogin() {
+        document.getElementById('login-form').style.display = 'block';
+        document.getElementById('register-form').style.display = 'none';
+    }
+
     async function login() {
         const username = document.getElementById('login-username').value;
         const password = document.getElementById('login-password').value;
-        const role = document.getElementById('login-role').value;
         const errorMessage = document.getElementById('login-error');
         errorMessage.style.display = 'none';
-        if (!username || !password || !role) {
+        if (!username || !password) {
             errorMessage.textContent = 'Please fill in all fields';
             errorMessage.style.display = 'block';
             return;
@@ -205,7 +182,7 @@
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrfToken
                 },
-                body: JSON.stringify({ username, password, role })
+                body: JSON.stringify({ username, password })
             });
             const data = await response.json();
             if (data.status === 'success') {
@@ -224,10 +201,9 @@
         const username = document.getElementById('register-username').value;
         const password = document.getElementById('register-password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
-        const role = document.getElementById('register-role').value;
         const errorMessage = document.getElementById('register-error');
         errorMessage.style.display = 'none';
-        if (!username || !password || !confirmPassword || !role) {
+        if (!username || !password || !confirmPassword) {
             errorMessage.textContent = 'Please fill in all fields';
             errorMessage.style.display = 'block';
             return;
@@ -244,7 +220,7 @@
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrfToken
                 },
-                body: JSON.stringify({ username, password, confirm_password: confirmPassword, role })
+                body: JSON.stringify({ username, password, confirm_password: confirmPassword })
             });
             const data = await response.json();
             if (data.status === 'success') {

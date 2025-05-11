@@ -1,0 +1,144 @@
+{% extends "app/layout.html" %}
+{% block content %}
+<div class="attendees-container">
+    <h2>Event Attendees</h2>
+    <div class="search-container">
+        <input type="text" id="event-search" placeholder="Search events..." onkeyup="searchEvents()">
+        <span class="search-icon">??</span>
+    </div>
+    <ul id="event-list">
+        {% for event in events %}
+        <li class="event-item" data-title="{{ event.title|lower }}" data-location="{{ event.location|lower }}">
+            <a href="{% url 'event_attendees' %}?event_id={{ event.id }}">{{ event.title }} - {{ event.date }} - {{ event.location }}</a>
+        </li>
+        {% empty %}
+        <li class="event-item">No events created.</li>
+        {% endfor %}
+    </ul>
+    {% if attendees %}
+    <h3>Participants for {{ selected_event.title }}</h3>
+    <div class="attendees-list">
+        {% for registration in attendees %}
+        <div class="attendee-item">
+            {{ registration.user.username }} - Registered at {{ registration.registered_at }}
+        </div>
+        {% empty %}
+        <p>No participants registered.</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .attendees-container {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    h2, h3 {
+        color: #1E40AF;
+        margin-bottom: 20px;
+    }
+
+    .search-container {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    #event-search {
+        width: 100%;
+        padding: 12px;
+        padding-right: 40px;
+        border: 1px solid #BFDBFE;
+        border-radius: 6px;
+        font-size: 16px;
+        background: rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(5px);
+        transition: border-color 0.3s ease, background 0.3s ease;
+    }
+
+        #event-search:focus {
+            border-color: #3B82F6;
+            background: rgba(255, 255, 255, 0.5);
+            outline: none;
+        }
+
+    .search-icon {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #3B82F6;
+        font-size: 18px;
+    }
+
+    #event-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .event-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 6px;
+        transition: transform 0.3s ease, background 0.3s ease;
+    }
+
+        .event-item:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .event-item a {
+            color: #3B82F6;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+            .event-item a:hover {
+                color: #1E40AF;
+            }
+
+    .attendees-list {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        border-radius: 6px;
+        margin-top: 20px;
+    }
+
+    .attendee-item {
+        padding: 10px;
+        margin-bottom: 5px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        color: #1E40AF;
+        font-size: 16px;
+    }
+
+        .attendee-item:last-child {
+            border-bottom: none;
+        }
+</style>
+
+<script>
+    function searchEvents() {
+        const input = document.getElementById('event-search').value.toLowerCase();
+        const events = document.getElementsByClassName('event-item');
+        for (let i = 0; i < events.length; i++) {
+            const title = events[i].getAttribute('data-title');
+            const location = events[i].getAttribute('data-location');
+            if (title.includes(input) || location.includes(input)) {
+                events[i].style.display = '';
+            } else {
+                events[i].style.display = 'none';
+            }
+        }
+    }
+</script>
+{% endblock %}
