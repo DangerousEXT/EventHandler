@@ -8,78 +8,156 @@
         <div class="error">{{ error }}</div>
         {% endif %}
         <div>
+            <select id="login-role" class="role-select">
+                <option value="participant">Participant</option>
+                <option value="organizer">Organizer</option>
+            </select>
             <input type="text" id="login-username" placeholder="Username" required>
             <input type="password" id="login-password" placeholder="Password" required>
             <div id="login-error" class="error"></div>
-            <button onclick="login()">Login</button>
+            <button class="glass-button" onclick="login()">Login</button>
         </div>
         <div class="toggle-link" onclick="showRegister()">Don't have an account? Register</div>
     </div>
     <div id="register-form" style="display:none;">
         <h2>Register</h2>
         <div>
+            <select id="register-role" class="role-select">
+                <option value="participant">Participant</option>
+                <option value="organizer">Organizer</option>
+            </select>
             <input type="text" id="register-username" placeholder="Username" required>
             <input type="password" id="register-password" placeholder="Password" required>
             <input type="password" id="confirm-password" placeholder="Confirm Password" required>
             <div id="register-error" class="error"></div>
-            <button onclick="register()">Register</button>
+            <button class="glass-button" onclick="register()">Register</button>
         </div>
         <div class="toggle-link" onclick="showLogin()">Already have an account? Login</div>
     </div>
 </div>
 
 <style>
+    body {
+        background: linear-gradient(135deg, #E0E7FF 0%, #BFDBFE 100%);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .background-blur {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(5px);
+        transition: backdrop-filter 0.3s ease;
+    }
+
+        .background-blur:hover {
+            backdrop-filter: blur(10px);
+        }
+
     .auth-container {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        width: 300px;
-        margin: 20px auto;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        width: 350px;
+        margin: 100px auto;
+        text-align: center;
+        z-index: 1;
     }
 
         .auth-container h2 {
-            text-align: center;
+            color: #1E40AF;
             margin-bottom: 20px;
+            font-size: 24px;
         }
 
-        .auth-container input {
+        .auth-container input, .auth-container select {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border: 1px solid #BFDBFE;
+            border-radius: 6px;
             box-sizing: border-box;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(5px);
+            transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
         }
 
-        .auth-container button {
-            width: 100%;
-            padding: 10px;
-            background-color: #1877f2;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-            .auth-container button:hover {
-                background-color: #165bb5;
+            .auth-container input:focus, .auth-container select:focus {
+                border-color: #3B82F6;
+                background: rgba(255, 255, 255, 0.5);
+                outline: none;
             }
 
+    .role-select:hover {
+        transform: scale(1.02);
+        background: rgba(59, 130, 246, 0.4);
+    }
+
+    .role-select option {
+        background: rgba(255, 255, 255, 0.9);
+        color: #1E40AF;
+        padding: 10px;
+    }
+
+        .role-select option:hover {
+            background: rgba(59, 130, 246, 0.5);
+            color: #3B82F6;
+        }
+
+    .glass-button {
+        width: 100%;
+        padding: 12px;
+        background: rgba(59, 130, 246, 0.2);
+        color: #FFFFFF;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .glass-button:hover {
+            background: rgba(59, 130, 246, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .glass-button:active {
+            transform: scale(0.95);
+        }
+
     .error {
-        color: red;
-        font-size: 12px;
+        color: #EF4444;
+        font-size: 14px;
         text-align: center;
+        margin: 10px 0;
         display: none;
     }
 
     .toggle-link {
         text-align: center;
-        margin-top: 10px;
+        margin-top: 15px;
         cursor: pointer;
-        color: #1877f2;
+        color: #3B82F6;
+        font-size: 14px;
+        transition: color 0.3s ease;
     }
+
+        .toggle-link:hover {
+            color: #1E40AF;
+        }
 </style>
 
 <script>
@@ -91,12 +169,31 @@
         document.getElementById('login-form').style.display = 'block';
         document.getElementById('register-form').style.display = 'none';
     }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrfToken = getCookie('csrftoken');
+
     async function login() {
         const username = document.getElementById('login-username').value;
         const password = document.getElementById('login-password').value;
+        const role = document.getElementById('login-role').value;
         const errorMessage = document.getElementById('login-error');
         errorMessage.style.display = 'none';
-        if (!username || !password) {
+        if (!username || !password || !role) {
             errorMessage.textContent = 'Please fill in all fields';
             errorMessage.style.display = 'block';
             return;
@@ -104,8 +201,11 @@
         try {
             const response = await fetch('/api/login/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ username, password, role })
             });
             const data = await response.json();
             if (data.status === 'success') {
@@ -115,17 +215,19 @@
                 errorMessage.style.display = 'block';
             }
         } catch (error) {
-            errorMessage.textContent = 'Server error';
+            errorMessage.textContent = 'Server error: ' + error.message;
             errorMessage.style.display = 'block';
         }
     }
+
     async function register() {
         const username = document.getElementById('register-username').value;
         const password = document.getElementById('register-password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
+        const role = document.getElementById('register-role').value;
         const errorMessage = document.getElementById('register-error');
         errorMessage.style.display = 'none';
-        if (!username || !password || !confirmPassword) {
+        if (!username || !password || !confirmPassword || !role) {
             errorMessage.textContent = 'Please fill in all fields';
             errorMessage.style.display = 'block';
             return;
@@ -138,8 +240,11 @@
         try {
             const response = await fetch('/api/register/', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password, confirm_password: confirmPassword })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ username, password, confirm_password: confirmPassword, role })
             });
             const data = await response.json();
             if (data.status === 'success') {
@@ -149,9 +254,30 @@
                 errorMessage.style.display = 'block';
             }
         } catch (error) {
-            errorMessage.textContent = 'Server error';
+            errorMessage.textContent = 'Server error: ' + error.message;
             errorMessage.style.display = 'block';
         }
     }
+
+    const blurElement = document.createElement('div');
+    blurElement.className = 'background-blur';
+    document.body.appendChild(blurElement);
+
+    document.addEventListener('mousemove', (e) => {
+        const blurSize = 100;
+        const x = e.clientX - blurSize / 2;
+        const y = e.clientY - blurSize / 2;
+        blurElement.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 50%)`;
+        blurElement.style.backdropFilter = `blur(${Math.min(10, 5 + e.clientX / 100)}px)`;
+    });
+
+    document.querySelectorAll('.glass-button').forEach(button => {
+        button.addEventListener('click', () => {
+            button.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                button.style.transform = 'scale(1)';
+            }, 100);
+        });
+    });
 </script>
 {% endblock %}
