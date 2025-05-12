@@ -1,16 +1,24 @@
 {% extends "app/layout.html" %}
-
 {% block content %}
+<div class="contact-container">
+	<h2>Contact</h2>
+	<p>Contact us at support@eventmanager.com</p>
+</div>
+<style>
+    .contact-container {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+    }
 
-<h2>{{ title }}.</h2>
-<h3>{{ message }}</h3>
-
-<address>
-    
-</address>
-
-<address>
-    <strong>Support:</strong>   <a href="mailto:Support@example.com">Support@example.com</a><br />
-</address>
-
+    h2 {
+        color: #1E40AF;
+    }
+</style>
 {% endblock %}

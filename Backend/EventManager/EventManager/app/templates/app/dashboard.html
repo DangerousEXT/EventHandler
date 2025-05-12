@@ -13,19 +13,32 @@
     <h3>Events</h3>
     <div class="search-container">
         <input type="text" id="event-search" placeholder="Search events..." onkeyup="searchEvents()">
-        <span class="search-icon">🔍</span>
+        <span class="search-icon" onclick="searchEvents()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+        </span>
     </div>
     <ul id="event-list">
         {% for event in events %}
         <li class="event-item" data-title="{{ event.title|lower }}" data-location="{{ event.location|lower }}">
-            <span>{{ event.title }} - {{ event.date }} - {{ event.location }}</span>
-            {% if user.profile.role == 'participant' %}
-            {% if user in event.eventregistration_set.all %}
-            <span class="registered-status">You are registered</span>
-            {% else %}
-            <button class="glass-button join-button" onclick="joinEvent({{ event.id }})">Join Event</button>
-            {% endif %}
-            {% endif %}
+            <span class="event-title" onclick="toggleEventDetails({{ event.id }})">{{ event.title }} - {{ event.date }} - {{ event.location }}</span>
+            <div class="event-details" id="event-details-{{ event.id }}" style="display: none;">
+                <p><strong>Description:</strong> {{ event.description }}</p>
+                <p><strong>Organizer:</strong> {{ event.organizer.username }}</p>
+                {% if event.image %}
+                <img src="{{ event.image.url }}" alt="{{ event.title }}" class="event-image">
+                {% endif %}
+                {% if user.profile.role == 'participant' %}
+                {% if user in event.eventregistration_set.all %}
+                <span class="registered-status">You are registered</span>
+                <button class="glass-button leave-button" onclick="leaveEvent({{ event.id }})">Leave Event</button>
+                {% else %}
+                <button class="glass-button join-button" onclick="joinEvent({{ event.id }})">Join Event</button>
+                {% endif %}
+                {% endif %}
+            </div>
         </li>
         {% empty %}
         <li class="event-item">No events available.</li>
@@ -47,14 +60,32 @@
 
     h2, h3 {
         color: #1E40AF;
+        text-align: center;
         margin-bottom: 20px;
     }
 
     .info-message {
         color: #3B82F6;
-        font-size: 16px;
+        text-align: center;
         margin-bottom: 20px;
     }
+
+    .glass-button {
+        display: inline-block;
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        color: #3B82F6;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.1s ease;
+        margin: 10px 0;
+    }
+
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
 
     .search-container {
         position: relative;
@@ -63,20 +94,17 @@
 
     #event-search {
         width: 100%;
-        padding: 12px;
-        padding-right: 40px;
-        border: 1px solid #BFDBFE;
+        padding: 10px 40px 10px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
         border-radius: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #1E40AF;
         font-size: 16px;
-        background: rgba(255, 255, 255, 0.3);
-        backdrop-filter: blur(5px);
-        transition: border-color 0.3s ease, background 0.3s ease;
     }
 
         #event-search:focus {
-            border-color: #3B82F6;
-            background: rgba(255, 255, 255, 0.5);
             outline: none;
+            border-color: #3B82F6;
         }
 
     .search-icon {
@@ -84,69 +112,55 @@
         right: 10px;
         top: 50%;
         transform: translateY(-50%);
-        color: #3B82F6;
-        font-size: 18px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
     }
 
-    #event-list {
-        list-style: none;
-        padding: 0;
-    }
+        .search-icon svg {
+            width: 20px;
+            height: 20px;
+        }
 
     .event-item {
         background: rgba(255, 255, 255, 0.1);
         padding: 15px;
         margin-bottom: 10px;
         border-radius: 6px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: transform 0.3s ease, background 0.3s ease;
+        color: #1E40AF;
     }
 
-        .event-item:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-
-    .glass-button {
-        padding: 12px;
-        background: rgba(59, 130, 246, 0.2);
-        color: #FFFFFF;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 6px;
+    .event-title {
         cursor: pointer;
         font-size: 16px;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s ease, background 0.3s ease;
     }
 
-        .glass-button:hover {
-            background: rgba(59, 130, 246, 0.4);
-            transform: translateY(-2px);
+    .event-details {
+        margin-top: 10px;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 6px;
+        transition: opacity 0.3s ease;
+    }
+
+        .event-details.open {
+            opacity: 1;
         }
 
-        .glass-button:active {
-            transform: scale(0.95);
-        }
-
-    .join-button {
-        margin-left: 10px;
+    .event-image {
+        max-width: 100%;
+        border-radius: 6px;
+        margin-top: 10px;
     }
 
     .registered-status {
         color: #10B981;
-        font-size: 14px;
-        margin-left: 10px;
+        font-weight: bold;
+        margin-right: 10px;
     }
 
-    .error {
-        color: #EF4444;
-        font-size: 14px;
-        text-align: center;
-        margin: 10px 0;
-        display: none;
+    .join-button, .leave-button {
+        margin-top: 10px;
     }
 </style>
 
@@ -222,6 +236,33 @@
         }
     }
 
+    async function leaveEvent(eventId) {
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'error';
+        document.body.appendChild(errorMessage);
+        try {
+            const response = await fetch('/api/leave_event/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ event_id: eventId })
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                errorMessage.textContent = data.message;
+                errorMessage.style.display = 'block';
+            }
+        } catch (error) {
+            errorMessage.textContent = 'Server error: ' + error.message;
+            errorMessage.style.display = 'block';
+        }
+    }
+
     function searchEvents() {
         const input = document.getElementById('event-search').value.toLowerCase();
         const events = document.getElementsByClassName('event-item');
@@ -233,6 +274,19 @@
             } else {
                 events[i].style.display = 'none';
             }
+        }
+    }
+
+    function toggleEventDetails(eventId) {
+        const details = document.getElementById(`event-details-${eventId}`);
+        const isOpen = details.classList.contains('open');
+        document.querySelectorAll('.event-details.open').forEach(d => {
+            d.classList.remove('open');
+            d.style.display = 'none';
+        });
+        if (!isOpen) {
+            details.style.display = 'block';
+            setTimeout(() => details.classList.add('open'), 10);
         }
     }
 

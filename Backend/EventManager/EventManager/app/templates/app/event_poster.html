@@ -1,16 +1,32 @@
 {% extends "app/layout.html" %}
 {% block content %}
 <div class="event-poster-container">
-    <h2>Create Event</h2>
-    <div id="event-form">
-        <input type="text" id="event-title" placeholder="Event Title" required>
-        <textarea id="event-description" placeholder="Event Description" required></textarea>
-        <input type="datetime-local" id="event-date" required>
-        <input type="text" id="event-location" placeholder="Event Location" required>
-        <input type="file" id="event-image" accept="image/*">
-        <div id="event-error" class="error"></div>
-        <button class="glass-button" onclick="createEvent()">Create Event</button>
-    </div>
+    <h2>Create New Event</h2>
+    <form id="event-form" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="title">Event Title</label>
+            <input type="text" id="title" name="title" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="5" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="date">Date and Time</label>
+            <input type="datetime-local" id="date" name="date" required>
+        </div>
+        <div class="form-group">
+            <label for="location">Location</label>
+            <input type="text" id="location" name="location" required>
+        </div>
+        <div class="form-group">
+            <label for="image">Event Image</label>
+            <input type="file" id="image" name="image" accept="image/*">
+        </div>
+        <button type="submit" class="glass-button">Create Event</button>
+    </form>
+    <div id="error-message" class="error" style="display: none;"></div>
 </div>
 
 <style>
@@ -22,56 +38,61 @@
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.3);
         max-width: 600px;
-        margin: 0 auto;
-        text-align: center;
+        margin: 20px auto;
     }
 
     h2 {
         color: #1E40AF;
+        text-align: center;
         margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        color: #3B82F6;
+        font-size: 16px;
+        margin-bottom: 8px;
     }
 
     input, textarea {
         width: 100%;
-        padding: 12px;
-        margin: 10px 0;
-        border: 1px solid #BFDBFE;
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
         border-radius: 6px;
-        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.1);
+        color: #1E40AF;
         font-size: 16px;
-        background: rgba(255, 255, 255, 0.3);
-        backdrop-filter: blur(5px);
-        transition: border-color 0.3s ease, background 0.3s ease;
-    }
-
-    textarea {
-        height: 100px;
-        resize: vertical;
+        transition: border-color 0.3s ease;
     }
 
         input:focus, textarea:focus {
-            border-color: #3B82F6;
-            background: rgba(255, 255, 255, 0.5);
             outline: none;
+            border-color: #3B82F6;
         }
 
+    textarea {
+        resize: vertical;
+    }
+
     .glass-button {
+        display: block;
         width: 100%;
         padding: 12px;
-        background: rgba(59, 130, 246, 0.2);
-        color: #FFFFFF;
+        background: rgba(255, 255, 255, 0.2);
         border: 1px solid rgba(255, 255, 255, 0.3);
         border-radius: 6px;
-        cursor: pointer;
+        color: #3B82F6;
         font-size: 16px;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s ease, background 0.3s ease;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.1s ease;
     }
 
         .glass-button:hover {
-            background: rgba(59, 130, 246, 0.4);
-            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .glass-button:active {
@@ -80,59 +101,43 @@
 
     .error {
         color: #EF4444;
+        margin-top: 10px;
+        text-align: center;
         font-size: 14px;
-        margin: 10px 0;
-        display: none;
     }
 </style>
 
 <script>
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    const csrfToken = getCookie('csrftoken');
-
-    async function createEvent() {
-        const title = document.getElementById('event-title').value;
-        const description = document.getElementById('event-description').value;
-        const date = document.getElementById('event-date').value;
-        const location = document.getElementById('event-location').value;
-        const image = document.getElementById('event-image').files[0];
-        const errorMessage = document.getElementById('event-error');
+    document.getElementById('event-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errorMessage = document.getElementById('error-message');
         errorMessage.style.display = 'none';
 
-        if (!title || !description || !date || !location) {
-            errorMessage.textContent = 'Please fill in all required fields';
+        const formData = new FormData(e.target);
+        const selectedDate = new Date(formData.get('date'));
+        const now = new Date();
+        const maxDate = new Date('2125-12-31T23:59');
+
+        const selectedDateStr = selectedDate.toISOString().slice(0, 16);
+        const nowStr = now.toISOString().slice(0, 16);
+        const maxDateStr = maxDate.toISOString().slice(0, 16);
+
+        if (selectedDateStr < nowStr) {
+            errorMessage.textContent = 'Event date cannot be in the past.';
             errorMessage.style.display = 'block';
             return;
         }
-
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('description', description);
-        formData.append('date', date);
-        formData.append('location', location);
-        if (image) {
-            formData.append('image', image);
+        if (selectedDateStr > maxDateStr) {
+            errorMessage.textContent = 'Event date cannot be after 2125.';
+            errorMessage.style.display = 'block';
+            return;
         }
 
         try {
             const response = await fetch('/api/create_event/', {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': csrfToken
+                    'X-CSRFToken': getCookie('csrftoken')
                 },
                 body: formData
             });
@@ -148,15 +153,28 @@
             errorMessage.textContent = 'Server error: ' + error.message;
             errorMessage.style.display = 'block';
         }
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
 
-    document.querySelectorAll('.glass-button').forEach(button => {
-        button.addEventListener('click', () => {
-            button.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                button.style.transform = 'scale(1)';
-            }, 100);
-        });
-    });
+    const dateInput = document.getElementById('date');
+    const now = new Date();
+    const minDate = now.toISOString().slice(0, 16);
+    const maxDate = '2125-12-31T23:59';
+    dateInput.setAttribute('min', minDate);
+    dateInput.setAttribute('max', maxDate);
 </script>
 {% endblock %}

@@ -2,12 +2,13 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.utils import timezone
-from datetime import timedelta
-import json
+from datetime import datetime, timedelta
 from .models import Event, Profile, OrganizerRequest, EventRegistration
 from django.views.decorators.csrf import ensure_csrf_cookie
+import json
 
 @ensure_csrf_cookie
 def login_page(request):
@@ -21,28 +22,18 @@ def dashboard(request):
     events = Event.objects.all()
     return render(request, 'app/dashboard.html', {'events': events})
 
+@login_required
 def event_poster(request):
     if not request.user.is_authenticated or request.user.profile.role != 'organizer':
         return redirect('dashboard')
     return render(request, 'app/event_poster.html')
 
+@login_required
 def event_attendees(request):
-    if not request.user.is_authenticated or request.user.profile.role != 'organizer':
+    if request.user.profile.role != 'organizer':
         return redirect('dashboard')
-    events = Event.objects.filter(organizer=request.user)
-    selected_event = None
-    attendees = []
-    if 'event_id' in request.GET:
-        try:
-            selected_event = Event.objects.get(id=request.GET['event_id'], organizer=request.user)
-            attendees = EventRegistration.objects.filter(event=selected_event)
-        except Event.DoesNotExist:
-            pass
-    return render(request, 'app/event_attendees.html', {
-        'events': events,
-        'selected_event': selected_event,
-        'attendees': attendees
-    })
+    events = Event.objects.filter(organizer=request.user).order_by('date')
+    return render(request, 'app/event_attendees.html', {'events': events})
 
 def about(request):
     return render(request, 'app/about.html')
@@ -127,31 +118,48 @@ def api_request_organizer(request):
             return JsonResponse({'status': 'error', 'message': f'Server error: {str(e)}'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request or user not authenticated'})
 
+@login_required
 def api_create_event(request):
-    if request.method == 'POST' and request.user.is_authenticated and request.user.profile.role == 'organizer':
+    if request.user.profile.role != 'organizer':
+        return JsonResponse({'status': 'error', 'message': 'Only organizers can create events.'})
+
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        date_str = request.POST.get('date')
+        location = request.POST.get('location')
+        image = request.FILES.get('image')
+
         try:
-            title = request.POST.get('title')
-            description = request.POST.get('description')
-            date = request.POST.get('date')
-            location = request.POST.get('location')
-            if not all([title, description, date, location]):
-                return JsonResponse({'status': 'error', 'message': 'All fields are required'})
-            event = Event.objects.create(
+            date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+            if timezone.is_aware(timezone.now()):
+                date = timezone.make_aware(date, timezone=timezone.get_current_timezone())
+            now = timezone.now()
+            if date < now:
+                return JsonResponse({'status': 'error', 'message': 'Event date cannot be in the past.'})
+            max_date = datetime(2125, 12, 31, 23, 59)
+            if timezone.is_aware(timezone.now()):
+                max_date = timezone.make_aware(max_date, timezone=timezone.get_current_timezone())
+            if date > max_date:
+                return JsonResponse({'status': 'error', 'message': 'Event date cannot be after 2125.'})
+
+            event = Event(
                 title=title,
                 description=description,
                 date=date,
                 location=location,
-                organizer=request.user
+                organizer=request.user,
+                image=image
             )
-            if 'image' in request.FILES:
-                event.image = request.FILES['image']
-                event.save()
-            return JsonResponse({'status': 'success', 'message': 'Event created successfully'})
-        except IntegrityError:
-            return JsonResponse({'status': 'error', 'message': 'Database error'})
+            event.save()
+
+            return JsonResponse({'status': 'success', 'message': 'Event created successfully!'})
+        except ValueError as e:
+            return JsonResponse({'status': 'error', 'message': f'Invalid date format: {str(e)}'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': f'Server error: {str(e)}'})
-    return JsonResponse({'status': 'error', 'message': 'Invalid request or unauthorized'})
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
 
 def api_join_event(request):
     if request.method == 'POST' and request.user.is_authenticated:
@@ -165,6 +173,27 @@ def api_join_event(request):
                 return JsonResponse({'status': 'error', 'message': 'You are already registered'})
             EventRegistration.objects.create(user=request.user, event=event)
             return JsonResponse({'status': 'success', 'message': 'Successfully registered for the event'})
+        except Event.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Event not found'})
+        except IntegrityError:
+            return JsonResponse({'status': 'error', 'message': 'Database error'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Server error: {str(e)}'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request or user not authenticated'})
+
+def api_leave_event(request):
+    if request.method == 'POST' and request.user.is_authenticated:
+        try:
+            data = json.loads(request.body)
+            event_id = data.get('event_id')
+            if not event_id:
+                return JsonResponse({'status': 'error', 'message': 'Event ID is required'})
+            event = Event.objects.get(id=event_id)
+            registration = EventRegistration.objects.filter(user=request.user, event=event)
+            if not registration.exists():
+                return JsonResponse({'status': 'error', 'message': 'You are not registered'})
+            registration.delete()
+            return JsonResponse({'status': 'success', 'message': 'Successfully unregistered from the event'})
         except Event.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Event not found'})
         except IntegrityError:

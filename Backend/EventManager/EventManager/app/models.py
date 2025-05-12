@@ -35,13 +35,14 @@ class OrganizerRequest(models.Model):
     def __str__(self):
         return f"{self.user.username} - Organizer Request ({self.status})"
 
+
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
-    date = models.DateTimeField(null=True, blank=True)
+    date = models.DateTimeField()
     location = models.CharField(max_length=200)
     organizer = models.ForeignKey(User, on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='event_images/', blank=True, null=True)
+    image = models.ImageField(upload_to='events/', blank=True, null=True)
 
     def __str__(self):
         return self.title
@@ -53,5 +54,6 @@ class EventRegistration(models.Model):
 
     class Meta:
         unique_together = ('user', 'event')
+
     def __str__(self):
         return f"{self.user.username} - {self.event.title}"

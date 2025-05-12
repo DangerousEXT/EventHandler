@@ -4,22 +4,27 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>{% block title %}Event Manager{% endblock %}</title>
+	<title>{% block title %}EventPoint{% endblock %}</title>
 	<link rel="stylesheet" href="{% static 'app/css/styles.css' %}">
 </head>
 <body>
 	<nav class="navbar">
-		<div class="navbar-brand">Event Manager</div>
+		<div class="navbar-brand">EventPoint</div>
 		<ul class="navbar-nav">
-			{% if user.is_authenticated %}
-			<li><a href="{% url 'dashboard' %}">Dashboard</a></li>
-			{% if user.profile.role == 'organizer' %}
-			<li><a href="{% url 'event_poster' %}">Create Event</a></li>
-			<li><a href="{% url 'event_attendees' %}">Event Attendees</a></li>
-			{% endif %}
 			<li><a href="{% url 'about' %}">About</a></li>
 			<li><a href="{% url 'contact' %}">Contact</a></li>
-			<li><a href="{% url 'logout' %}">Logout</a></li>
+			{% if user.is_authenticated %}
+			<li class="dropdown">
+				<a href="#" class="dropdown-toggle">Menu ▼</a>
+				<ul class="dropdown-menu">
+					<li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+					{% if user.profile.role == 'organizer' %}
+					<li><a href="{% url 'event_poster' %}">Create Event</a></li>
+					<li><a href="{% url 'event_attendees' %}">Participants</a></li>
+					{% endif %}
+					<li><a href="{% url 'logout' %}">Logout</a></li>
+				</ul>
+			</li>
 			{% else %}
 			<li><a href="{% url 'login_page' %}">Login</a></li>
 			{% endif %}
@@ -58,6 +63,7 @@
 			margin: 0;
 			padding: 0;
 			display: flex;
+			align-items: center;
 		}
 
 			.navbar-nav li {
@@ -75,11 +81,77 @@
 					color: #1E40AF;
 				}
 
+		.dropdown {
+			position: relative;
+		}
+
+		.dropdown-toggle {
+			cursor: pointer;
+			padding: 10px;
+			background: rgba(255, 255, 255, 0.1);
+			border-radius: 6px;
+			transition: background 0.3s ease;
+		}
+
+			.dropdown-toggle:hover {
+				background: rgba(255, 255, 255, 0.3);
+			}
+
+		.dropdown-menu {
+			display: none;
+			position: absolute;
+			top: 100%;
+			right: 0;
+			background: rgba(255, 255, 255, 0.2);
+			backdrop-filter: blur(10px);
+			border: 1px solid rgba(255, 255, 255, 0.3);
+			border-radius: 6px;
+			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+			list-style: none;
+			padding: 10px 0;
+			min-width: 150px;
+			z-index: 1000;
+		}
+
+		.dropdown:hover .dropdown-menu {
+			display: block;
+		}
+
+		.dropdown-menu li {
+			margin: 0;
+		}
+
+		.dropdown-menu a {
+			display: block;
+			padding: 10px 20px;
+			color: #3B82F6;
+			font-size: 14px;
+		}
+
+			.dropdown-menu a:hover {
+				background: rgba(255, 255, 255, 0.3);
+				color: #1E40AF;
+			}
+
 		.container {
 			max-width: 1200px;
 			margin: 20px auto;
 			padding: 20px;
 		}
 	</style>
+	<script>
+		document.querySelector('.dropdown-toggle')?.addEventListener('click', (e) => {
+			e.preventDefault();
+			const menu = document.querySelector('.dropdown-menu');
+			menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+		});
+
+		document.addEventListener('click', (e) => {
+			const dropdown = document.querySelector('.dropdown');
+			if (!dropdown.contains(e.target)) {
+				document.querySelector('.dropdown-menu').style.display = 'none';
+			}
+		});
+	</script>
 </body>
 </html>

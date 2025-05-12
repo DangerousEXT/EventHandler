@@ -14,4 +14,5 @@ urlpatterns = [
     path('api/request_organizer/', views.api_request_organizer, name='api_request_organizer'),
     path('api/create_event/', views.api_create_event, name='api_create_event'),
     path('api/join_event/', views.api_join_event, name='api_join_event'),
+    path('api/leave_event/', views.api_leave_event, name='api_leave_event'),
 ]

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from .models import Profile, Event, OrganizerRequest
+from .models import Profile, Event, OrganizerRequest, EventRegistration
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
