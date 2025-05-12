@@ -2,12 +2,10 @@
 {% block content %}
 <div class="dashboard-container">
     <h2>Dashboard</h2>
-    {% if user.profile.role_status == 'pending' %}
-    <p class="info-message">Your organizer request is pending approval.</p>
-    {% elif user.profile.role_status == 'rejected' %}
-    <p class="info-message">Your organizer request was rejected. You can submit another request.</p>
-    {% endif %}
-    {% if user.profile.role == 'participant' %}
+    {% if user.profile.role == 'organizer' %}
+    <a href="{% url 'event_attendees' %}" class="glass-button">View Event Attendees</a>
+    <a href="{% url 'event_poster' %}" class="glass-button">Create New Event</a>
+    {% else %}
     <button class="glass-button" onclick="requestOrganizer()">Request Organizer Role</button>
     {% endif %}
     <h3>Events</h3>
@@ -31,7 +29,7 @@
                 <img src="{{ event.image.url }}" alt="{{ event.title }}" class="event-image">
                 {% endif %}
                 {% if user.profile.role == 'participant' %}
-                {% if user in event.eventregistration_set.all %}
+                {% if user in event.registrations.all %}
                 <span class="registered-status">You are registered</span>
                 <button class="glass-button leave-button" onclick="leaveEvent({{ event.id }})">Leave Event</button>
                 {% else %}
@@ -64,12 +62,6 @@
         margin-bottom: 20px;
     }
 
-    .info-message {
-        color: #3B82F6;
-        text-align: center;
-        margin-bottom: 20px;
-    }
-
     .glass-button {
         display: inline-block;
         padding: 10px 20px;
@@ -80,7 +72,8 @@
         font-size: 16px;
         cursor: pointer;
         transition: background 0.3s ease, transform 0.1s ease;
-        margin: 10px 0;
+        margin: 10px;
+        text-decoration: none;
     }
 
         .glass-button:hover {
@@ -162,6 +155,12 @@
     .join-button, .leave-button {
         margin-top: 10px;
     }
+
+    .error {
+        color: #EF4444;
+        margin: 10px 0;
+        text-align: center;
+    }
 </style>
 
 <script>
@@ -185,7 +184,7 @@
     async function requestOrganizer() {
         const errorMessage = document.createElement('div');
         errorMessage.className = 'error';
-        document.body.appendChild(errorMessage);
+        document.querySelector('.dashboard-container').prepend(errorMessage);
         try {
             const response = await fetch('/api/request_organizer/', {
                 method: 'POST',
@@ -212,7 +211,7 @@
     async function joinEvent(eventId) {
         const errorMessage = document.createElement('div');
         errorMessage.className = 'error';
-        document.body.appendChild(errorMessage);
+        document.querySelector('.dashboard-container').prepend(errorMessage);
         try {
             const response = await fetch('/api/join_event/', {
                 method: 'POST',
@@ -239,7 +238,7 @@
     async function leaveEvent(eventId) {
         const errorMessage = document.createElement('div');
         errorMessage.className = 'error';
-        document.body.appendChild(errorMessage);
+        document.querySelector('.dashboard-container').prepend(errorMessage);
         try {
             const response = await fetch('/api/leave_event/', {
                 method: 'POST',

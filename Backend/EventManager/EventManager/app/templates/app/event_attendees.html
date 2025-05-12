@@ -2,6 +2,7 @@
 {% block content %}
 <div class="attendees-container">
     <h2>Event Attendees</h2>
+    <a href="{% url 'event_poster' %}" class="glass-button">Create New Event</a>
     <div class="search-container">
         <input type="text" id="attendee-search" placeholder="Search by name or email..." onkeyup="searchAttendees()">
         <span class="search-icon" onclick="searchAttendees()">
@@ -15,21 +16,21 @@
         {% for event in events %}
         <div class="event-item" data-event-id="{{ event.id }}">
             <div class="event-title" onclick="toggleAttendees({{ event.id }})">
-                {{ event.title }} - {{ event.date }} - {{ event.location }}
+                {{ event.title }} ({{ event.date|date:"Y-m-d H:i" }} - {{ event.location }})
             </div>
             <ul class="attendee-list" id="attendee-list-{{ event.id }}" style="display: none;">
-                {% for registration in event.eventregistration_set.all %}
+                {% for registration in event.registrations.all %}
                 <li class="attendee-item" data-name="{{ registration.user.username|lower }}" data-email="{{ registration.user.email|lower }}">
                     <span>{{ registration.user.username }} ({{ registration.user.email }})</span>
                     <span>Registered: {{ registration.created_at|date:"Y-m-d H:i" }}</span>
                 </li>
                 {% empty %}
-                <li class="attendee-item">No attendees for this event.</li>
+                <li class="attendee-item">No attendees registered.</li>
                 {% endfor %}
             </ul>
         </div>
         {% empty %}
-        <p class="no-events">You have no events.</p>
+        <p class="no-events">You have no events. Create one to get started!</p>
         {% endfor %}
     </div>
 </div>
@@ -52,11 +53,27 @@
         margin-bottom: 20px;
     }
 
+    .glass-button {
+        display: inline-block;
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        color: #3B82F6;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.1s ease;
+        margin-bottom: 20px;
+        text-decoration: none;
+    }
+
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
     .search-container {
         position: relative;
         margin-bottom: 20px;
-        max-width: 100%;
-        box-sizing: border-box;
     }
 
     #attendee-search {
@@ -67,7 +84,6 @@
         background: rgba(255, 255, 255, 0.1);
         color: #1E40AF;
         font-size: 16px;
-        box-sizing: border-box;
     }
 
         #attendee-search:focus {
@@ -81,14 +97,7 @@
         top: 50%;
         transform: translateY(-50%);
         cursor: pointer;
-        display: flex;
-        align-items: center;
     }
-
-        .search-icon svg {
-            width: 20px;
-            height: 20px;
-        }
 
     .events-list {
         margin-top: 20px;
@@ -130,7 +139,6 @@
         border-radius: 4px;
         display: flex;
         justify-content: space-between;
-        align-items: center;
         font-size: 14px;
     }
 
@@ -151,6 +159,7 @@
             list.style.maxHeight = '0';
             list.style.opacity = '0';
         });
+
         if (!isOpen) {
             attendeeList.style.display = 'block';
             setTimeout(() => {

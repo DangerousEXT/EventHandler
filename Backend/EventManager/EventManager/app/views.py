@@ -16,9 +16,8 @@ def login_page(request):
         return redirect('dashboard')
     return render(request, 'app/index.html', {'title': 'Login'})
 
+@login_required
 def dashboard(request):
-    if not request.user.is_authenticated:
-        return redirect('login_page')
     events = Event.objects.all()
     return render(request, 'app/dashboard.html', {'events': events})
 
@@ -30,9 +29,12 @@ def event_poster(request):
 
 @login_required
 def event_attendees(request):
-    if request.user.profile.role != 'organizer':
+    if not hasattr(request.user, 'profile') or request.user.profile.role != 'organizer':
         return redirect('dashboard')
     events = Event.objects.filter(organizer=request.user).order_by('date')
+    print(f"User: {request.user.username}, Events: {events.count()}")
+    for event in events:
+        print(f"Event: {event.title}, Attendees: {event.registrations.count()}")
     return render(request, 'app/event_attendees.html', {'events': events})
 
 def about(request):
@@ -56,7 +58,7 @@ def api_login(request):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                profile, created = Profile.objects.get_or_create(user=user, defaults={'role': 'participant', 'role_status': 'approved'})
+                profile, created = Profile.objects.get_or_create(user=user, defaults={'role': 'participant'})
                 return JsonResponse({'status': 'success', 'redirect': '/dashboard/'})
             return JsonResponse({'status': 'error', 'message': 'Invalid credentials'})
         except json.JSONDecodeError:
@@ -81,7 +83,7 @@ def api_register(request):
             if User.objects.filter(username=username).exists():
                 return JsonResponse({'status': 'error', 'message': 'Username already exists'})
             user = User.objects.create_user(username=username, password=password)
-            Profile.objects.create(user=user, role='participant', role_status='approved')
+            Profile.objects.create(user=user, role='participant')
             login(request, user)
             return JsonResponse({'status': 'success', 'redirect': '/dashboard/'})
         except json.JSONDecodeError:
@@ -106,9 +108,6 @@ def api_request_organizer(request):
                 return JsonResponse({'status': 'error', 'message': 'You can only submit 2 requests per day'})
             
             OrganizerRequest.objects.create(user=request.user, status='pending')
-            profile = Profile.objects.get(user=request.user)
-            profile.role_status = 'pending'
-            profile.save()
             return JsonResponse({'status': 'success', 'message': 'Organizer request submitted'})
         except Profile.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Profile not found'})
