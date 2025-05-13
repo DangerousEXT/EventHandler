@@ -18,6 +18,7 @@ db.sqlite3-journal
 
 ### VSCode ###
 .vscode/
+.vs/
 .wsuo
 .suo
 
