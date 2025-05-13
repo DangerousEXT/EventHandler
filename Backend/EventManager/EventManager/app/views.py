@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.utils import timezone
 from datetime import datetime, timedelta
-from .models import Event, Profile, OrganizerRequest, EventRegistration
+from .models import Event, Profile, OrganizerRequest, EventRegistration, Item
 from django.views.decorators.csrf import ensure_csrf_cookie
 import json
 
@@ -42,6 +42,10 @@ def about(request):
 
 def contact(request):
     return render(request, 'app/contact.html')
+
+def shop(request):
+    items = Item.objects.all().order_by('-created_at')  # Newest first
+    return render(request, 'app/shop.html', {'items': items})
 
 def logout_view(request):
     logout(request)

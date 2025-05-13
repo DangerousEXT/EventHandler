@@ -50,3 +50,29 @@ class EventRegistration(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.event.title}"
+
+class Item(models.Model):
+    SPONSOR_CHOICES = (
+        ('sponsor1', 'Sponsor 1'),
+        ('sponsor2', 'Sponsor 2'),
+        ('sponsor3', 'Sponsor 3'),
+        ('sponsor4', 'Sponsor 4'),
+    )
+    MERCH_TYPE_CHOICES = (
+        ('sweatshirt', 'Sweatshirt'),
+        ('cap', 'Cap'),
+        ('hoodie', 'Hoodie'),
+        ('socks', 'Socks'),
+        ('pants', 'Pants'),
+        ('mug', 'Mug'),
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    price = models.PositiveIntegerField()  # Price in points
+    sponsor = models.CharField(max_length=50, choices=SPONSOR_CHOICES)
+    merch_type = models.CharField(max_length=50, choices=MERCH_TYPE_CHOICES)
+    created_at = models.DateTimeField(default=timezone.now)
+    image = models.ImageField(upload_to='items/', blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.merch_type}) - {self.price} points"

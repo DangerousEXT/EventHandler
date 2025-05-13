@@ -2,11 +2,11 @@
   "ExpandedNodes": [
     "",
     "\\app",
-    "\\app\\migrations\\__pycache__",
-    "\\app\\templates",
     "\\app\\templates\\app",
-    "\\EventManager"
+    "\\EventManager",
+    "\\staticfiles\\admin\\css",
+    "\\static\\admin"
   ],
-  "SelectedNode": "\\app\\templates\\app\\layout.html",
+  "SelectedNode": "\\staticfiles",
   "PreviewInSolutionExplorer": false
 }

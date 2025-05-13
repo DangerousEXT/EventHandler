@@ -1,157 +1,158 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>{% block title %}EventPoint{% endblock %}</title>
-	<link rel="stylesheet" href="{% static 'app/css/styles.css' %}">
+	<meta charset="utf-8" />
+	<title>EventPoint</title>
+	<link rel="stylesheet" href="{% static 'app/styles.css' %}" />
 </head>
 <body>
 	<nav class="navbar">
-		<div class="navbar-brand">EventPoint</div>
-		<ul class="navbar-nav">
-			<li><a href="{% url 'about' %}">About</a></li>
-			<li><a href="{% url 'contact' %}">Contact</a></li>
+		<div class="navbar-brand">
+			<a href="{% url 'dashboard' %}">EventPoint</a>
+		</div>
+		<div class="nav-right">
+			<ul class="nav-links">
+				<li><a href="{% url 'about' %}">About</a></li>
+				<li><a href="{% url 'contact' %}">Contact</a></li>
+			</ul>
 			{% if user.is_authenticated %}
-			<li class="dropdown">
-				<a href="#" class="dropdown-toggle">Menu ▼</a>
-				<ul class="dropdown-menu">
-					<li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+			<div class="dropdown">
+				<button class="dropdown-toggle">Menu ▼</button>
+				<div class="dropdown-content">
+					<a href="{% url 'dashboard' %}">Dashboard</a>
 					{% if user.profile.role == 'organizer' %}
-					<li><a href="{% url 'event_poster' %}">Create Event</a></li>
-					<li><a href="{% url 'event_attendees' %}">Participants</a></li>
+					<a href="{% url 'event_poster' %}">Create Event</a>
+					<a href="{% url 'event_attendees' %}">Participants</a>
 					{% endif %}
-					<li><a href="{% url 'logout' %}">Logout</a></li>
-				</ul>
-			</li>
+					<a href="{% url 'logout' %}">Logout</a>
+				</div>
+			</div>
+			<a href="{% url 'shop' %}" class="shop-icon" title="Shop">
+				<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+					<line x1="3" y1="6" x2="21" y2="6"></line>
+					<path d="M16 10a4 4 0 0 1-8 0"></path>
+				</svg>
+			</a>
 			{% else %}
-			<li><a href="{% url 'login_page' %}">Login</a></li>
+			<a href="{% url 'login_page' %}">Login</a>
 			{% endif %}
-		</ul>
+		</div>
 	</nav>
-	<div class="container">
+	<div class="content">
 		{% block content %}
 		{% endblock %}
 	</div>
-	<style>
-		body {
-			background: linear-gradient(135deg, #E0E7FF 0%, #BFDBFE 100%);
-			font-family: Arial, sans-serif;
-			margin: 0;
-			padding: 0;
+</body>
+</html>
+
+<style>
+	body {
+		background: #E0E7FF;
+		margin: 0;
+		font-family: Arial, sans-serif;
+	}
+
+	.navbar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 15px 30px;
+		background: rgba(255, 255, 255, 0.1);
+		backdrop-filter: blur(10px);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+	}
+
+	.navbar-brand a {
+		font-size: 24px;
+		color: #1E40AF;
+		text-decoration: none;
+		font-weight: bold;
+	}
+
+	.nav-links {
+		list-style: none;
+		display: flex;
+		margin: 0;
+		padding: 0;
+	}
+
+		.nav-links li {
+			margin: 0 15px;
 		}
 
-		.navbar {
-			background: rgba(255, 255, 255, 0.2);
-			backdrop-filter: blur(10px);
-			padding: 15px;
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-		}
-
-		.navbar-brand {
-			color: #1E40AF;
-			font-size: 24px;
-			font-weight: bold;
-		}
-
-		.navbar-nav {
-			list-style: none;
-			margin: 0;
-			padding: 0;
-			display: flex;
-			align-items: center;
-		}
-
-			.navbar-nav li {
-				margin-left: 20px;
-			}
-
-			.navbar-nav a {
-				color: #3B82F6;
-				text-decoration: none;
-				font-size: 16px;
-				transition: color 0.3s ease;
-			}
-
-				.navbar-nav a:hover {
-					color: #1E40AF;
-				}
-
-		.dropdown {
-			position: relative;
-		}
-
-		.dropdown-toggle {
-			cursor: pointer;
-			padding: 10px;
-			background: rgba(255, 255, 255, 0.1);
-			border-radius: 6px;
-			transition: background 0.3s ease;
-		}
-
-			.dropdown-toggle:hover {
-				background: rgba(255, 255, 255, 0.3);
-			}
-
-		.dropdown-menu {
-			display: none;
-			position: absolute;
-			top: 100%;
-			right: 0;
-			background: rgba(255, 255, 255, 0.2);
-			backdrop-filter: blur(10px);
-			border: 1px solid rgba(255, 255, 255, 0.3);
-			border-radius: 6px;
-			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-			list-style: none;
-			padding: 10px 0;
-			min-width: 150px;
-			z-index: 1000;
-		}
-
-		.dropdown:hover .dropdown-menu {
-			display: block;
-		}
-
-		.dropdown-menu li {
-			margin: 0;
-		}
-
-		.dropdown-menu a {
-			display: block;
-			padding: 10px 20px;
+		.nav-links a {
 			color: #3B82F6;
-			font-size: 14px;
+			text-decoration: none;
+			font-size: 18px;
 		}
 
-			.dropdown-menu a:hover {
-				background: rgba(255, 255, 255, 0.3);
+			.nav-links a:hover {
 				color: #1E40AF;
 			}
 
-		.container {
-			max-width: 1200px;
-			margin: 20px auto;
-			padding: 20px;
-		}
-	</style>
-	<script>
-		document.querySelector('.dropdown-toggle')?.addEventListener('click', (e) => {
-			e.preventDefault();
-			const menu = document.querySelector('.dropdown-menu');
-			menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-		});
+	.nav-right {
+		display: flex;
+		align-items: center;
+	}
 
-		document.addEventListener('click', (e) => {
-			const dropdown = document.querySelector('.dropdown');
-			if (!dropdown.contains(e.target)) {
-				document.querySelector('.dropdown-menu').style.display = 'none';
+	.dropdown {
+		position: relative;
+		display: inline-block;
+		margin-left: 10px;
+	}
+
+	.dropdown-toggle {
+		background: rgba(255, 255, 255, 0.2);
+		border: 1px solid rgba(255, 255, 255, 0.3);
+		padding: 8px 15px;
+		color: #3B82F6;
+		cursor: pointer;
+		border-radius: 6px;
+	}
+
+	.dropdown-content {
+		display: none;
+		position: absolute;
+		background: rgba(255, 255, 255, 0.2);
+		backdrop-filter: blur(10px);
+		border: 1px solid rgba(255, 255, 255, 0.3);
+		min-width: 160px;
+		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+		z-index: 1;
+		border-radius: 6px;
+		right: 0;
+	}
+
+		.dropdown-content a {
+			color: #3B82F6;
+			padding: 12px 16px;
+			text-decoration: none;
+			display: block;
+			font-size: 14px;
+		}
+
+			.dropdown-content a:hover {
+				background: rgba(255, 255, 255, 0.3);
 			}
-		});
-	</script>
-</body>
-</html>
+
+	.dropdown:hover .dropdown-content {
+		display: block;
+	}
+
+	.shop-icon {
+		margin-left: 15px;
+		display: flex;
+		align-items: center;
+	}
+
+		.shop-icon svg {
+			transition: stroke 0.3s ease, transform 0.3s ease;
+		}
+
+		.shop-icon:hover svg {
+			stroke: #1E40AF;
+			transform: scale(1.1);
+		}
+</style>
