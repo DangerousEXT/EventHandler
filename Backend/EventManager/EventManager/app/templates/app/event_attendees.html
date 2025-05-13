@@ -1,0 +1,193 @@
+{% extends "app/layout.html" %}
+{% block content %}
+<div class="attendees-container">
+    <h2>Event Attendees</h2>
+    <a href="{% url 'event_poster' %}" class="glass-button">Create New Event</a>
+    <div class="search-container">
+        <input type="text" id="attendee-search" placeholder="Search by name or email..." onkeyup="searchAttendees()">
+        <span class="search-icon" onclick="searchAttendees()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+        </span>
+    </div>
+    <div class="events-list">
+        {% for event in events %}
+        <div class="event-item" data-event-id="{{ event.id }}">
+            <div class="event-title" onclick="toggleAttendees({{ event.id }})">
+                {{ event.title }} ({{ event.date|date:"Y-m-d H:i" }} - {{ event.location }})
+            </div>
+            <ul class="attendee-list" id="attendee-list-{{ event.id }}" style="display: none;">
+                {% for registration in event.registrations.all %}
+                <li class="attendee-item" data-name="{{ registration.user.username|lower }}" data-email="{{ registration.user.email|lower }}">
+                    <span>{{ registration.user.username }} ({{ registration.user.email }})</span>
+                    <span>Registered: {{ registration.created_at|date:"Y-m-d H:i" }}</span>
+                </li>
+                {% empty %}
+                <li class="attendee-item">No attendees registered.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% empty %}
+        <p class="no-events">You have no events. Create one to get started!</p>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .attendees-container {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        max-width: 800px;
+        margin: 20px auto;
+    }
+
+    h2 {
+        color: #1E40AF;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .glass-button {
+        display: inline-block;
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        color: #3B82F6;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.1s ease;
+        margin-bottom: 20px;
+        text-decoration: none;
+    }
+
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+    .search-container {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    #attendee-search {
+        width: 100%;
+        padding: 10px 35px 10px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #1E40AF;
+        font-size: 16px;
+    }
+
+        #attendee-search:focus {
+            outline: none;
+            border-color: #3B82F6;
+        }
+
+    .search-icon {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+    }
+
+    .events-list {
+        margin-top: 20px;
+    }
+
+    .event-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 6px;
+        color: #1E40AF;
+    }
+
+    .event-title {
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .attendee-list {
+        margin-top: 10px;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 6px;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+    }
+
+        .attendee-list.open {
+            max-height: 500px;
+            opacity: 1;
+        }
+
+    .attendee-item {
+        padding: 10px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 14px;
+    }
+
+    .no-events {
+        color: #EF4444;
+        text-align: center;
+        font-size: 16px;
+    }
+</style>
+
+<script>
+    function toggleAttendees(eventId) {
+        const attendeeList = document.getElementById(`attendee-list-${eventId}`);
+        const isOpen = attendeeList.classList.contains('open');
+
+        document.querySelectorAll('.attendee-list.open').forEach(list => {
+            list.classList.remove('open');
+            list.style.maxHeight = '0';
+            list.style.opacity = '0';
+        });
+
+        if (!isOpen) {
+            attendeeList.style.display = 'block';
+            setTimeout(() => {
+                attendeeList.classList.add('open');
+                attendeeList.style.maxHeight = '500px';
+                attendeeList.style.opacity = '1';
+            }, 10);
+        } else {
+            attendeeList.style.maxHeight = '0';
+            attendeeList.style.opacity = '0';
+            setTimeout(() => {
+                attendeeList.style.display = 'none';
+            }, 300);
+        }
+    }
+
+    function searchAttendees() {
+        const input = document.getElementById('attendee-search').value.toLowerCase();
+        const attendeeItems = document.getElementsByClassName('attendee-item');
+        for (let i = 0; i < attendeeItems.length; i++) {
+            const name = attendeeItems[i].getAttribute('data-name');
+            const email = attendeeItems[i].getAttribute('data-email');
+            if (name.includes(input) || email.includes(input)) {
+                attendeeItems[i].style.display = '';
+            } else {
+                attendeeItems[i].style.display = 'none';
+            }
+        }
+    }
+</script>
+{% endblock %}

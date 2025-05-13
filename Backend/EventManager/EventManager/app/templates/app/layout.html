@@ -1,46 +1,179 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>{{ title }} - Event Manager</title>
-	{% load static %}
-	<link rel="stylesheet" type="text/css" href="{% static 'app/content/bootstrap.min.css' %}">
-	<link rel="stylesheet" type="text/css" href="{% static 'app/content/site.css' %}">
-	<script src="{% static 'app/scripts/modernizr-2.6.2.js' %}"></script>
+	<meta charset="utf-8" />
+	<title>EventPoint</title>
+	<link rel="stylesheet" href="{% static 'app/styles.css' %}" />
 </head>
 <body>
-<div class="navbar navbar-inverse navbar-fixed-top">
-	<div class="container">
-		<div class="navbar-header">
-			<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-			</button>
-			<a href="/" class="navbar-brand">Event Manager</a>
+	<nav class="navbar">
+		<div class="navbar-brand">
+			<a href="{% url 'dashboard' %}">EventPoint</a>
 		</div>
-		<div class="navbar-collapse collapse">
-			<ul class="nav navbar-nav">
-				<li><a href="{% url 'role_selection' %}">Role Selection</a></li>
-				<li><a href="{% url 'event_poster' %}">Events</a></li>
+		<div class="nav-right">
+			<ul class="nav-links">
 				<li><a href="{% url 'about' %}">About</a></li>
 				<li><a href="{% url 'contact' %}">Contact</a></li>
 			</ul>
-			{% include 'app/loginpartial.html' %}
+			{% if user.is_authenticated %}
+			<div class="dropdown">
+				<button class="dropdown-toggle">Menu ▼</button>
+				<div class="dropdown-content">
+					<a href="{% url 'dashboard' %}">Dashboard</a>
+					{% if user.profile.role == 'organizer' %}
+					<a href="{% url 'event_poster' %}">Create Event</a>
+					<a href="{% url 'event_attendees' %}">Participants</a>
+					{% endif %}
+					<a href="{% url 'top_participants' %}">Top Participants</a>
+					<a href="{% url 'logout' %}">Logout</a>
+				</div>
+			</div>
+			<a href="{% url 'shop' %}" class="shop-icon" title="Shop">
+				<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+					<line x1="3" y1="6" x2="21" y2="6"></line>
+					<path d="M16 10a4 4 0 0 1-8 0"></path>
+				</svg>
+			</a>
+			{% else %}
+			<a href="{% url 'login_page' %}">Login</a>
+			{% endif %}
 		</div>
+	</nav>
+	<div class="content">
+		{% block content %}
+		{% endblock %}
 	</div>
-</div>
-<div class="container body-content">
-	{% block content %}{% endblock %}
-	<hr>
-	<footer>
-		<p>© {{ year }} - Event Manager</p>
-	</footer>
-</div>
-<script src="{% static 'app/scripts/jquery-1.10.2.js' %}"></script>
-<script src="{% static 'app/scripts/bootstrap.js' %}"></script>
-<script src="{% static 'app/scripts/respond.js' %}"></script>
-{% block scripts %}{% endblock %}
+
+	<script>
+		// Функция для получения CSRF-токена из cookies
+		function getCookie(name) {
+			let cookieValue = null;
+			if (document.cookie && document.cookie !== '') {
+				const cookies = document.cookie.split(';');
+				for (let i = 0; i < cookies.length; i++) {
+					const cookie = cookies[i].trim();
+					if (cookie.substring(0, name.length + 1) === (name + '=')) {
+						cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+						break;
+					}
+				}
+			}
+			return cookieValue;
+		}
+
+		const csrftoken = getCookie('csrftoken');
+	</script>
 </body>
 </html>
+
+<style>
+	body {
+		background: #E0E7FF;
+		margin: 0;
+		font-family: Arial, sans-serif;
+	}
+
+	.navbar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 15px 30px;
+		background: rgba(255, 255, 255, 0.1);
+		backdrop-filter: blur(10px);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+	}
+
+	.navbar-brand a {
+		font-size: 24px;
+		color: #1E40AF;
+		text-decoration: none;
+		font-weight: bold;
+	}
+
+	.nav-links {
+		list-style: none;
+		display: flex;
+		margin: 0;
+		padding: 0;
+	}
+
+		.nav-links li {
+			margin: 0 15px;
+		}
+
+		.nav-links a {
+			color: #3B82F6;
+			text-decoration: none;
+			font-size: 18px;
+		}
+
+			.nav-links a:hover {
+				color: #1E40AF;
+			}
+
+	.nav-right {
+		display: flex;
+		align-items: center;
+	}
+
+	.dropdown {
+		position: relative;
+		display: inline-block;
+		margin-left: 10px;
+	}
+
+	.dropdown-toggle {
+		background: rgba(255, 255, 255, 0.2);
+		border: 1px solid rgba(255, 255, 255, 0.3);
+		padding: 8px 15px;
+		color: #3B82F6;
+		cursor: pointer;
+		border-radius: 6px;
+	}
+
+	.dropdown-content {
+		display: none;
+		position: absolute;
+		background: rgba(255, 255, 255, 0.2);
+		backdrop-filter: blur(10px);
+		border: 1px solid rgba(255, 255, 255, 0.3);
+		min-width: 160px;
+		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+		z-index: 1;
+		border-radius: 6px;
+		right: 0;
+	}
+
+		.dropdown-content a {
+			color: #3B82F6;
+			padding: 12px 16px;
+			text-decoration: none;
+			display: block;
+			font-size: 14px;
+		}
+
+			.dropdown-content a:hover {
+				background: rgba(255, 255, 255, 0.3);
+			}
+
+	.dropdown:hover .dropdown-content {
+		display: block;
+	}
+
+	.shop-icon {
+		margin-left: 15px;
+		display: flex;
+		align-items: center;
+	}
+
+		.shop-icon svg {
+			transition: stroke 0.3s ease, transform 0.3s ease;
+		}
+
+		.shop-icon:hover svg {
+			stroke: #1E40AF;
+			transform: scale(1.1);
+		}
+</style>

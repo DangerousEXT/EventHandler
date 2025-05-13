@@ -1,7 +1,24 @@
 {% extends "app/layout.html" %}
-
 {% block content %}
-<h2>{{ title }}.</h2>
-<h3>{{ message }}</h3>
-<p>Use this area to provide additional information.</p>
+<div class="about-container">
+	<h2>About</h2>
+    <p>Welcome to EventPoint, your platform for organizing and joining events!</p>
+</div>
+<style>
+    .about-container {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        max-width: 800px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    h2 {
+        color: #1E40AF;
+    }
+</style>
 {% endblock %}

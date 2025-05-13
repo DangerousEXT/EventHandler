@@ -1,116 +1,235 @@
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from django.shortcuts import render,redirect
-from django.contrib.auth import authenticate,login,logout
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError
 from django.utils import timezone
-from .models import Event
+from datetime import datetime, timedelta
+from .models import Event, Profile, OrganizerRequest, EventRegistration, Item
+from django.views.decorators.csrf import ensure_csrf_cookie
 import json
-from datetime import timedelta
 
-def role_selection(request):
-    if 'role' in request.session:
-        return redirect('event_poster')
-    if request.method=='POST':
-        role=request.POST.get('role')
-        request.session['role']=role
-        return redirect('event_poster')
-    return render(request,'app/role_selection.html')
-
-def event_poster(request):
-    if 'role' not in request.session:
-        return redirect('role_selection')
-    query=request.GET.get('search','')
-    events=Event.objects.all()
-    if query:
-        events=events.filter(title__icontains=query)
-    return render(request,'app/event_poster.html',{'events':events,'query':query})
-
-@csrf_exempt
-def create_event(request):
-    if request.session.get('role')!='organizer' or not request.user.is_authenticated:
-        return redirect('role_selection')
-    if request.method=='POST':
-        title=request.POST.get('title')
-        description=request.POST.get('description')
-        date_time=request.POST.get('date_time')
-        category=request.POST.get('category')
-        image=request.FILES.get('image')
-        event=Event.objects.create(
-            title=title,description=description,date_time=date_time,
-            category=category,image=image,organizer=request.user
-        )
-        return redirect('dashboard')
-    return render(request,'app/create_event.html')
-
+@ensure_csrf_cookie
 def login_page(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
-    if request.method=='POST':
-        username=request.POST.get('username')
-        password=request.POST.get('password')
-        user=authenticate(request,username=username,password=password)
-        if user is not None:
-            login(request,user)
-            return redirect('dashboard')
-        else:
-            return render(request,'app/index.html',{'error':'Invalid credentials'})
-    return render(request,'app/index.html')
+    return render(request, 'app/index.html', {'title': 'Login'})
 
-@csrf_exempt
-def api_login(request):
-    if request.method=='POST':
-        data=json.loads(request.body)
-        username=data.get('username')
-        password=data.get('password')
-        user=authenticate(request,username=username,password=password)
-        if user is not None:
-            login(request,user)
-            return JsonResponse({'status':'success','redirect':'/dashboard/'})
-        else:
-            return JsonResponse({'status':'error','message':'Invalid credentials'})
-    return JsonResponse({'status':'error','message':'Invalid request'},status=400)
-
-@csrf_exempt
-def api_register(request):
-    if request.method=='POST':
-        data=json.loads(request.body)
-        username=data.get('username')
-        password=data.get('password')
-        confirm_password=data.get('confirm_password')
-        if password!=confirm_password:
-            return JsonResponse({'status':'error','message':'Passwords do not match'})
-        if User.objects.filter(username=username).exists():
-            return JsonResponse({'status':'error','message':'Username already exists'})
-        user=User.objects.create_user(username=username,password=password)
-        login(request,user)
-        return JsonResponse({'status':'success','redirect':'/dashboard/'})
-    return JsonResponse({'status':'error','message':'Invalid request'},status=400)
-
+@login_required
 def dashboard(request):
-    if not request.user.is_authenticated:
-        return redirect('role_selection')
-    query=request.GET.get('search','')
-    if query:
-        events=Event.objects.filter(title__icontains=query)|Event.objects.filter(description__icontains=query)
-    else:
-        events=Event.objects.all()
-    context={
-        'user_name':request.user.username,'events':events,
-        'query':query,'role':request.session.get('role','participant')
-    }
-    return render(request,'app/dashboard.html',context)
+    events = Event.objects.all()
+    return render(request, 'app/dashboard.html', {'events': events})
 
-def logout_user(request):
-    logout(request)
-    request.session.flush()
-    return redirect('role_selection')
+@login_required
+def event_poster(request):
+    if not request.user.is_authenticated or request.user.profile.role != 'organizer':
+        return redirect('dashboard')
+    return render(request, 'app/event_poster.html')
 
-def home(request):
-    return render(request,'app/index.html',{'title':'Home Page','message':'Welcome to the Event Manager'})
+@login_required
+def event_attendees(request):
+    if not hasattr(request.user, 'profile') or request.user.profile.role != 'organizer':
+        return redirect('dashboard')
+    events = Event.objects.filter(organizer=request.user).order_by('date')
+    print(f"User: {request.user.username}, Events: {events.count()}")
+    for event in events:
+        print(f"Event: {event.title}, Attendees: {event.registrations.count()}")
+    return render(request, 'app/event_attendees.html', {'events': events})
 
 def about(request):
-    return render(request,'app/about.html',{'title':'About','message':'Learn More About Us'})
+    return render(request, 'app/about.html')
 
 def contact(request):
-    return render(request,'app/contact.html',{'title':'Contact','message':'Get in Touch'})
+    return render(request, 'app/contact.html')
+
+@login_required
+def shop(request):
+    items = Item.objects.all().order_by('-created_at')  # Newest first
+    user_points = request.user.profile.points if hasattr(request.user, 'profile') else 0
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            item_id = data.get('item_id')
+            if not item_id:
+                return JsonResponse({'status': 'error', 'message': 'Item ID is required'})
+            item = Item.objects.get(id=item_id)
+            if user_points < item.price:
+                return JsonResponse({'status': 'error', 'message': 'Not enough points'})
+            profile = request.user.profile
+            profile.points -= item.price
+            profile.save()
+            return JsonResponse({'status': 'success', 'message': 'Item purchased successfully', 'new_points': profile.points})
+        except Item.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Item not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Server error: {str(e)}'})
+    return render(request, 'app/shop.html', {'items': items, 'user_points': user_points})
+
+@login_required
+def top_participants(request):
+    profiles = Profile.objects.filter(role='participant').order_by('-total_points_earned')
+    return render(request, 'app/top_participants.html', {'profiles': profiles})
+
+def logout_view(request):
+    logout(request)
+    return redirect('login_page')
+
+def api_login(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            username = data.get('username')
+            password = data.get('password')
+            if not all([username, password]):
+                return JsonResponse({'status': 'error', 'message': 'All fields are required'})
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                profile, created = Profile.objects.get_or_create(user=user, defaults={'role': 'participant'})
+                return JsonResponse({'status': 'success', 'redirect': '/dashboard/'})
+            return JsonResponse({'status': 'error', 'message': 'Invalid credentials'})
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'})
+        except IntegrityError:
+            return JsonResponse({'status': 'error', 'message': 'Database error'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Server error: {str(e)}'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+
+def api_register(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            username = data.get('username')
+            password = data.get('password')
+            confirm_password = data.get('confirm_password')
+            if not all([username, password, confirm_password]):
+                return JsonResponse({'status': 'error', 'message': 'All fields are required'})
+            if password != confirm_password:
+                return JsonResponse({'status': 'error', 'message': 'Passwords do not match'})
+            if User.objects.filter(username=username).exists():
+                return JsonResponse({'status': 'error', 'message': 'Username already exists'})
+            user = User.objects.create_user(username=username, password=password)
+            Profile.objects.create(user=user, role='participant')
+            login(request, user)
+            return JsonResponse({'status': 'success', 'redirect': '/dashboard/'})
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'})
+        except IntegrityError:
+            return JsonResponse({'status': 'error', 'message': 'Database error'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Server error: {str(e)}'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+
+def api_request_organizer(request):
+    if request.method == 'POST' and request.user.is_authenticated:
+        try:
+            today = timezone.now().date()
+            start_of_day = timezone.make_aware(timezone.datetime.combine(today, timezone.datetime.min.time()))
+            end_of_day = start_of_day + timedelta(days=1)
+            request_count = OrganizerRequest.objects.filter(
+                user=request.user,
+                created_at__range=(start_of_day, end_of_day)
+            ).count()
+            if request_count >= 2:
+                return JsonResponse({'status': 'error', 'message': 'You can only submit 2 requests per day'})
+            
+            OrganizerRequest.objects.create(user=request.user, status='pending')
+            return JsonResponse({'status': 'success', 'message': 'Organizer request submitted'})
+        except Profile.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Profile not found'})
+        except IntegrityError:
+            return JsonResponse({'status': 'error', 'message': 'Database error'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Server error: {str(e)}'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request or user not authenticated'})
+
+@login_required
+def api_create_event(request):
+    if request.user.profile.role != 'organizer':
+        return JsonResponse({'status': 'error', 'message': 'Only organizers can create events.'})
+
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        date_str = request.POST.get('date')
+        location = request.POST.get('location')
+        image = request.FILES.get('image')
+
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
+            if timezone.is_aware(timezone.now()):
+                date = timezone.make_aware(date, timezone=timezone.get_current_timezone())
+            now = timezone.now()
+            if date < now:
+                return JsonResponse({'status': 'error', 'message': 'Event date cannot be in the past.'})
+            max_date = datetime(2125, 12, 31, 23, 59)
+            if timezone.is_aware(timezone.now()):
+                max_date = timezone.make_aware(max_date, timezone=timezone.get_current_timezone())
+            if date > max_date:
+                return JsonResponse({'status': 'error', 'message': 'Event date cannot be after 2125.'})
+
+            event = Event(
+                title=title,
+                description=description,
+                date=date,
+                location=location,
+                organizer=request.user,
+                image=image
+            )
+            event.save()
+
+            return JsonResponse({'status': 'success', 'message': 'Event created successfully!'})
+        except ValueError as e:
+            return JsonResponse({'status': 'error', 'message': f'Invalid date format: {str(e)}'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Server error: {str(e)}'})
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
+def api_join_event(request):
+    if request.method == 'POST' and request.user.is_authenticated:
+        try:
+            data = json.loads(request.body)
+            event_id = data.get('event_id')
+            if not event_id:
+                return JsonResponse({'status': 'error', 'message': 'Event ID is required'})
+            event = Event.objects.get(id=event_id)
+            if EventRegistration.objects.filter(user=request.user, event=event).exists():
+                return JsonResponse({'status': 'error', 'message': 'You are already registered'})
+            EventRegistration.objects.create(user=request.user, event=event)
+            # Начисление очков
+            profile = request.user.profile
+            profile.points += 200
+            profile.total_points_earned += 200
+            profile.save()
+            return JsonResponse({'status': 'success', 'message': 'Successfully registered for the event'})
+        except Event.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Event not found'})
+        except IntegrityError:
+            return JsonResponse({'status': 'error', 'message': 'Database error'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Server error: {str(e)}'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request or user not authenticated'})
+
+def api_leave_event(request):
+    if request.method == 'POST' and request.user.is_authenticated:
+        try:
+            data = json.loads(request.body)
+            event_id = data.get('event_id')
+            if not event_id:
+                return JsonResponse({'status': 'error', 'message': 'Event ID is required'})
+            event = Event.objects.get(id=event_id)
+            registration = EventRegistration.objects.filter(user=request.user, event=event)
+            if not registration.exists():
+                return JsonResponse({'status': 'error', 'message': 'You are not registered'})
+            registration.delete()
+            return JsonResponse({'status': 'success', 'message': 'Successfully unregistered from the event'})
+        except Event.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Event not found'})
+        except IntegrityError:
+            return JsonResponse({'status': 'error', 'message': 'Database error'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Server error: {str(e)}'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request or user not authenticated'})

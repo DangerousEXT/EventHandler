@@ -1,148 +1,301 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <style>
-        body {
-            font-family: Arial,sans-serif;
-            margin: 0;
-            background-color: #f0f2f5;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 20px;
-            background-color: #1877f2;
-            color: white;
-        }
-
-        .search-bar {
-            padding: 5px;
-            width: 200px;
-        }
-
-        .user-profile {
-            position: relative;
-            display: inline-block;
-        }
-
-        .user-icon {
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-        }
-
-        .dropdown {
-            display: none;
-            position: absolute;
-            right: 0;
-            background-color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-radius: 5px;
-        }
-
-            .dropdown a {
-                display: block;
-                padding: 10px;
-                color: black;
-                text-decoration: none;
-            }
-
-                .dropdown a:hover {
-                    background-color: #f0f0f0;
-                }
-
-        .user-profile:hover .dropdown {
-            display: block;
-        }
-
-        .event-list {
-            max-height: 500px;
-            overflow-y: auto;
-            margin: 20px;
-            padding: 10px;
-            background-color: white;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .event-item {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-
-            .event-item:last-child {
-                border-bottom: none;
-            }
-
-            .event-item img {
-                max-width: 100px;
-                max-height: 100px;
-            }
-
-        .welcome {
-            margin: 20px;
-            text-align: center;
-        }
-
-        .create-event-btn {
-            display: inline-block;
-            margin: 10px 20px;
-            padding: 10px 20px;
-            background-color: #1877f2;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-
-            .create-event-btn:hover {
-                background-color: #165bb5;
-            }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div>
-            <form method="GET">
-                <input type="text" name="search" class="search-bar" placeholder="Search events..." value="{{ query }}">
-                <button type="submit">Search</button>
-            </form>
-        </div>
-        <div class="user-profile">
-            <img src="/static/images/user-icon.png" alt="User" class="user-icon">
-            <div class="dropdown">
-                <a href="{% url 'dashboard' %}">Dashboard</a>
-                {% if role == 'organizer' %}
-                <a href="{% url 'create_event' %}">Create Event</a>
-                {% endif %}
-                <a href="{% url 'logout' %}">Logout</a>
-            </div>
-        </div>
+{% extends "app/layout.html" %}
+{% block content %}
+<div class="dashboard-container">
+    <h2>Dashboard</h2>
+    {% if user.profile.role == 'organizer' %}
+    <a href="{% url 'event_attendees' %}" class="glass-button">View Event Attendees</a>
+    <a href="{% url 'event_poster' %}" class="glass-button">Create New Event</a>
+    {% else %}
+    <button class="glass-button" onclick="requestOrganizer()">Request Organizer Role</button>
+    {% endif %}
+    <h3>Events</h3>
+    <div class="search-container">
+        <input type="text" id="event-search" placeholder="Search events..." onkeyup="searchEvents()">
+        <span class="search-icon" onclick="searchEvents()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+        </span>
     </div>
-    <div class="welcome">
-        <h2>Welcome, {{ user_name }}!</h2>
-        <p>You are logged in as a {{ role }}.</p>
-        {% if role == 'organizer' %}
-        <a href="{% url 'create_event' %}" class="create-event-btn">Create New Event</a>
-        {% endif %}
-    </div>
-    <div class="event-list">
+    <ul id="event-list">
         {% for event in events %}
-        <div class="event-item">
-            <h3>{{ event.title }}</h3>
-            <p>Category: {{ event.category }}</p>
-            <p>{{ event.description }}</p>
-            <p>Date: {{ event.date_time }}</p>
-            {% if event.image %}
-            <img src="{{ event.image.url }}" alt="{{ event.title }}">
-            {% endif %}
-        </div>
+        <li class="event-item" data-title="{{ event.title|lower }}" data-location="{{ event.location|lower }}">
+            <span class="event-title" onclick="toggleEventDetails({{ event.id }})">{{ event.title }} - {{ event.date }} - {{ event.location }}</span>
+            <div class="event-details" id="event-details-{{ event.id }}" style="display: none;">
+                <p><strong>Description:</strong> {{ event.description }}</p>
+                <p><strong>Organizer:</strong> {{ event.organizer.username }}</p>
+                {% if event.image %}
+                <img src="{{ event.image.url }}" alt="{{ event.title }}" class="event-image">
+                {% endif %}
+                {% if user.profile.role == 'participant' %}
+                {% if user in event.registrations.all %}
+                <span class="registered-status">You are registered</span>
+                <button class="glass-button leave-button" onclick="leaveEvent({{ event.id }})">Leave Event</button>
+                {% else %}
+                <button class="glass-button join-button" onclick="joinEvent({{ event.id }})">Join Event</button>
+                {% endif %}
+                {% endif %}
+            </div>
+        </li>
         {% empty %}
-        <p>No events found.</p>
+        <li class="event-item">No events available.</li>
         {% endfor %}
-    </div>
-</body>
-</html>
+    </ul>
+</div>
+
+<style>
+    .dashboard-container {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    h2, h3 {
+        color: #1E40AF;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .glass-button {
+        display: inline-block;
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        color: #3B82F6;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.1s ease;
+        margin: 10px;
+        text-decoration: none;
+    }
+
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+    .search-container {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    #event-search {
+        width: 100%;
+        padding: 10px 10px 10px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #1E40AF;
+        font-size: 16px;
+    }
+
+        #event-search:focus {
+            outline: none;
+            border-color: #3B82F6;
+        }
+
+    .search-icon {
+        position: absolute;
+        right: -10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+    }
+
+        .search-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+    .event-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 6px;
+        color: #1E40AF;
+    }
+
+    .event-title {
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .event-details {
+        margin-top: 10px;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 6px;
+        transition: opacity 0.3s ease;
+    }
+
+        .event-details.open {
+            opacity: 1;
+        }
+
+    .event-image {
+        max-width: 100%;
+        border-radius: 6px;
+        margin-top: 10px;
+    }
+
+    .registered-status {
+        color: #10B981;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    .join-button, .leave-button {
+        margin-top: 10px;
+    }
+
+    .error {
+        color: #EF4444;
+        margin: 10px 0;
+        text-align: center;
+    }
+</style>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrfToken = getCookie('csrftoken');
+
+    async function requestOrganizer() {
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'error';
+        document.querySelector('.dashboard-container').prepend(errorMessage);
+        try {
+            const response = await fetch('/api/request_organizer/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({})
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                errorMessage.textContent = data.message;
+                errorMessage.style.display = 'block';
+            }
+        } catch (error) {
+            errorMessage.textContent = 'Server error: ' + error.message;
+            errorMessage.style.display = 'block';
+        }
+    }
+
+    async function joinEvent(eventId) {
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'error';
+        document.querySelector('.dashboard-container').prepend(errorMessage);
+        try {
+            const response = await fetch('/api/join_event/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ event_id: eventId })
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                errorMessage.textContent = data.message;
+                errorMessage.style.display = 'block';
+            }
+        } catch (error) {
+            errorMessage.textContent = 'Server error: ' + error.message;
+            errorMessage.style.display = 'block';
+        }
+    }
+
+    async function leaveEvent(eventId) {
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'error';
+        document.querySelector('.dashboard-container').prepend(errorMessage);
+        try {
+            const response = await fetch('/api/leave_event/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ event_id: eventId })
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                errorMessage.textContent = data.message;
+                errorMessage.style.display = 'block';
+            }
+        } catch (error) {
+            errorMessage.textContent = 'Server error: ' + error.message;
+            errorMessage.style.display = 'block';
+        }
+    }
+
+    function searchEvents() {
+        const input = document.getElementById('event-search').value.toLowerCase();
+        const events = document.getElementsByClassName('event-item');
+        for (let i = 0; i < events.length; i++) {
+            const title = events[i].getAttribute('data-title');
+            const location = events[i].getAttribute('data-location');
+            if (title.includes(input) || location.includes(input)) {
+                events[i].style.display = '';
+            } else {
+                events[i].style.display = 'none';
+            }
+        }
+    }
+
+    function toggleEventDetails(eventId) {
+        const details = document.getElementById(`event-details-${eventId}`);
+        const isOpen = details.classList.contains('open');
+        document.querySelectorAll('.event-details.open').forEach(d => {
+            d.classList.remove('open');
+            d.style.display = 'none';
+        });
+        if (!isOpen) {
+            details.style.display = 'block';
+            setTimeout(() => details.classList.add('open'), 10);
+        }
+    }
+
+    document.querySelectorAll('.glass-button').forEach(button => {
+        button.addEventListener('click', () => {
+            button.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                button.style.transform = 'scale(1)';
+            }, 100);
+        });
+    });
+</script>
+{% endblock %}

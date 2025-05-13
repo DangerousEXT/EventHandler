@@ -60,8 +60,6 @@
             return el.checked;
         }).length;
         const counter = document.querySelector(options.counterContainer);
-        // data-actions-icnt is defined in the generated HTML
-        // and contains the total amount of objects in the queryset
         const actions_icnt = Number(counter.dataset.actionsIcnt);
         counter.textContent = interpolate(
             ngettext('%(sel)s of %(cnt)s selected', '%(sel)s of %(cnt)s selected', sel), {
@@ -166,7 +164,6 @@
         });
 
         const el = document.querySelector('#changelist-form input[name=_save]');
-        // The button does not exist if no fields are editable.
         if (el) {
             el.addEventListener('click', function(event) {
                 if (document.querySelector('[name=action]').value) {
@@ -179,14 +176,9 @@
                 }
             });
         }
-        // Sync counter when navigating to the page, such as through the back
-        // button.
         window.addEventListener('pageshow', (event) => updateCounter(actionCheckboxes, options));
     };
 
-    // Call function fn when the DOM is loaded and ready. If it is already
-    // loaded, call the function now.
-    // http://youmightnotneedjquery.com/#ready
     function ready(fn) {
         if (document.readyState !== 'loading') {
             fn();

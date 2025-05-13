@@ -70,6 +70,9 @@
     <Content Include="app\templates\app\role_selection.html">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="app\templates\app\shop.html">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="requirements.txt" />
     <Content Include="app\static\app\content\bootstrap.css" />
     <Content Include="app\static\app\content\bootstrap.min.css" />

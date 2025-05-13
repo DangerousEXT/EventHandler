@@ -1,0 +1,450 @@
+{% extends "app/layout.html" %}
+{% load static %}
+{% block content %}
+<div class="shop-container">
+    <h2>Shop</h2>
+    <div class="shop-content">
+        <div class="filters-sidebar">
+            <h3>Filters</h3>
+            <div class="filter-group">
+                <label for="price-range">Price Range (Points)</label>
+                <div class="price-inputs">
+                    <input type="number" id="price-min" placeholder="Min" min="0">
+                    <span>-</span>
+                    <input type="number" id="price-max" placeholder="Max" min="0">
+                </div>
+            </div>
+            <div class="filter-group">
+                <label for="sponsor-filter">Sponsor</label>
+                <div class="checkbox-group" id="sponsor-filter">
+                    <label><input type="checkbox" value="sponsor1"> Sponsor 1</label>
+                    <label><input type="checkbox" value="sponsor2"> Sponsor 2</label>
+                    <label><input type="checkbox" value="sponsor3"> Sponsor 3</label>
+                    <label><input type="checkbox" value="sponsor4"> Sponsor 4</label>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label for="merch-type-filter">Merch Type</label>
+                <div class="checkbox-group" id="merch-type-filter">
+                    <label><input type="checkbox" value="sweatshirt"> Sweatshirt</label>
+                    <label><input type="checkbox" value="cap"> Cap</label>
+                    <label><input type="checkbox" value="hoodie"> Hoodie</label>
+                    <label><input type="checkbox" value="socks"> Socks</label>
+                    <label><input type="checkbox" value="pants"> Pants</label>
+                    <label><input type="checkbox" value="mug"> Mug</label>
+                </div>
+            </div>
+            <button class="glass-button reset-button" onclick="resetFilters()">Reset Filters</button>
+        </div>
+        <div class="items-container">
+            <div class="top-bar">
+                <div class="search-container">
+                    <input type="text" id="item-search" placeholder="Search by description..." onkeyup="searchItems()">
+                    <span class="search-icon" onclick="searchItems()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </span>
+                </div>
+                <div class="quick-filter">
+                    <select id="quick-sort" onchange="sortItems()">
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                        <option value="newest">Newest</option>
+                    </select>
+                </div>
+                <div class="points-display">
+                    <span>Points: <span id="user-points">{{ user_points }}</span></span>
+                </div>
+            </div>
+            <div class="items-grid">
+                {% for item in items %}
+                <div class="item-card" data-description="{{ item.description|lower }}" data-price="{{ item.price }}" data-sponsor="{{ item.sponsor }}" data-merch-type="{{ item.merch_type }}" onclick="showPurchaseModal({{ item.id }}, '{{ item.title }}', {{ item.price }})">
+                    <h4>{{ item.title }}</h4>
+                    {% if item.image %}
+                    <img src="{{ item.image.url }}" alt="{{ item.title }}" class="item-image">
+                    {% endif %}
+                    <p>{{ item.description|truncatewords:20 }}</p>
+                    <p><strong>Price:</strong> {{ item.price }} points</p>
+                    <p><strong>Sponsor:</strong> {{ item.get_sponsor_display }}</p>
+                    <p><strong>Type:</strong> {{ item.get_merch_type_display }}</p>
+                </div>
+                {% empty %}
+                <div class="no-items">No items available yet :-(</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="purchase-modal" class="modal">
+    <div class="modal-content">
+        <h3>Confirm Purchase</h3>
+        <p id="modal-message"></p>
+        <div class="modal-buttons">
+            <button class="glass-button" onclick="confirmPurchase()">Yes</button>
+            <button class="glass-button" onclick="closeModal()">No</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .shop-container {
+        background: rgba(245, 245, 245, 0.2);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        max-width: 1000px;
+        margin: 20px auto;
+        position: relative;
+    }
+
+    h2 {
+        color: #1E40AF;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    h3 {
+        color: #3B82F6;
+        margin-bottom: 15px;
+    }
+
+    .shop-content {
+        display: flex;
+        gap: 20px;
+    }
+
+    .filters-sidebar {
+        width: 250px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        border-radius: 6px;
+    }
+
+    .filter-group {
+        margin-bottom: 20px;
+    }
+
+        .filter-group label {
+            display: block;
+            color: #3B82F6;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+    .price-inputs {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .price-inputs input {
+            width: 100px;
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #1E40AF;
+        }
+
+    .checkbox-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #1E40AF;
+        font-size: 14px;
+    }
+
+    .checkbox-group input {
+        margin-right: 8px;
+    }
+
+    .reset-button {
+        width: 100%;
+        padding: 10px;
+        margin-top: 10px;
+    }
+
+    .items-container {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 20px;
+        border-radius: 6px;
+        position: relative;
+    }
+
+    .top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+        position: relative;
+    }
+
+    .search-container {
+        position: relative;
+        width: 300px;
+    }
+
+    #item-search {
+        width: 100%;
+        padding: 10px 35px 10px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #1E40AF;
+        font-size: 16px;
+    }
+
+        #item-search:focus {
+            outline: none;
+            border-color: #3B82F6;
+        }
+
+    .search-icon {
+        position: absolute;
+        right: -30px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+    }
+
+    .quick-filter select {
+        padding: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #1E40AF;
+        font-size: 14px;
+    }
+
+    .points-display {
+        color: #5E8AA8;
+        font-weight: bold;
+        font-size: 16px;
+    }
+
+    .items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .item-card {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 6px;
+        text-align: center;
+        transition: transform 0.3s ease;
+        cursor: pointer;
+    }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .item-card h4 {
+            color: #1E40AF;
+            margin-bottom: 10px;
+        }
+
+        .item-card p {
+            color: #3B82F6;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+    .item-image {
+        max-width: 100%;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+
+    .no-items {
+        color: #EF4444;
+        font-size: 18px;
+        text-align: center;
+        grid-column: 1 / -1;
+    }
+
+    .glass-button {
+        display: block;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        color: #3B82F6;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.1s ease;
+        text-align: center;
+    }
+
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .glass-button:active {
+            transform: scale(0.95);
+        }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+    }
+
+        .modal-content h3 {
+            color: #1E40AF;
+            margin-bottom: 15px;
+        }
+
+        .modal-content p {
+            color: #3B82F6;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+    .modal-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
+</style>
+
+<script>
+    let selectedItemId = null;
+
+    function showPurchaseModal(itemId, itemTitle, itemPrice) {
+        selectedItemId = itemId;
+        document.getElementById('modal-message').innerText = `Are you sure you want to buy ${itemTitle} for ${itemPrice} points?`;
+        document.getElementById('purchase-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('purchase-modal').style.display = 'none';
+        selectedItemId = null;
+    }
+
+    function confirmPurchase() {
+        if (!selectedItemId) return;
+
+        fetch('/shop/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({ item_id: selectedItemId }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(data.message);
+                document.getElementById('user-points').innerText = data.new_points;
+            } else {
+                alert(data.message);
+            }
+            closeModal();
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+            closeModal();
+        });
+    }
+
+    function searchItems() {
+        const input = document.getElementById('item-search').value.toLowerCase();
+        const items = document.querySelectorAll('.item-card');
+        items.forEach(item => {
+            const description = item.getAttribute('data-description');
+            item.style.display = description.includes(input) ? '' : 'none';
+        });
+    }
+
+    function sortItems() {
+        const sortValue = document.getElementById('quick-sort').value;
+        const itemsContainer = document.querySelector('.items-grid');
+        const items = Array.from(itemsContainer.querySelectorAll('.item-card'));
+
+        items.sort((a, b) => {
+            const priceA = parseInt(a.getAttribute('data-price'));
+            const priceB = parseInt(b.getAttribute('data-price'));
+            if (sortValue === 'price-asc') return priceA - priceB;
+            if (sortValue === 'price-desc') return priceB - priceA;
+            if (sortValue === 'newest') return 0; // Already sorted by created_at
+            return 0;
+        });
+
+        itemsContainer.innerHTML = '';
+        items.forEach(item => itemsContainer.appendChild(item));
+    }
+
+    function applyFilters() {
+        const priceMin = parseInt(document.getElementById('price-min').value) || 0;
+        const priceMax = parseInt(document.getElementById('price-max').value) || Infinity;
+        const selectedSponsors = Array.from(document.querySelectorAll('#sponsor-filter input:checked')).map(cb => cb.value);
+        const selectedMerchTypes = Array.from(document.querySelectorAll('#merch-type-filter input:checked')).map(cb => cb.value);
+        const items = document.querySelectorAll('.item-card');
+
+        items.forEach(item => {
+            const price = parseInt(item.getAttribute('data-price'));
+            const sponsor = item.getAttribute('data-sponsor');
+            const merchType = item.getAttribute('data-merch-type');
+            const priceMatch = price >= priceMin && price <= priceMax;
+            const sponsorMatch = selectedSponsors.length === 0 || selectedSponsors.includes(sponsor);
+            const merchTypeMatch = selectedMerchTypes.length === 0 || selectedMerchTypes.includes(merchType);
+            item.style.display = priceMatch && sponsorMatch && merchTypeMatch ? '' : 'none';
+        });
+    }
+
+    function resetFilters() {
+        document.getElementById('price-min').value = '';
+        document.getElementById('price-max').value = '';
+        document.querySelectorAll('.checkbox-group input').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        document.querySelectorAll('.item-card').forEach(item => {
+            item.style.display = '';
+        });
+    }
+
+    document.getElementById('price-min').addEventListener('input', applyFilters);
+    document.getElementById('price-max').addEventListener('input', applyFilters);
+    document.querySelectorAll('.checkbox-group input').forEach(checkbox => {
+        checkbox.addEventListener('change', applyFilters);
+    });
+
+    document.querySelectorAll('.glass-button').forEach(button => {
+        button.addEventListener('click', () => {
+            button.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                button.style.transform = 'scale(1)';
+            }, 100);
+        });
+    });
+</script>
+{% endblock %}
