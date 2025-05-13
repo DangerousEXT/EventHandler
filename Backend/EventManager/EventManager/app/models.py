@@ -13,6 +13,8 @@ class Profile(models.Model):
     )
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='participant')
+    points = models.PositiveIntegerField(default=0)  # Текущие очки
+    total_points_earned = models.PositiveIntegerField(default=0)  # Всего заработано очков
 
     def __str__(self):
         return f"{self.user.username} - {self.role}"
@@ -68,7 +70,7 @@ class Item(models.Model):
     )
     title = models.CharField(max_length=200)
     description = models.TextField()
-    price = models.PositiveIntegerField()  # Price in points
+    price = models.PositiveIntegerField()
     sponsor = models.CharField(max_length=50, choices=SPONSOR_CHOICES)
     merch_type = models.CharField(max_length=50, choices=MERCH_TYPE_CHOICES)
     created_at = models.DateTimeField(default=timezone.now)

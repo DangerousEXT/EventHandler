@@ -43,9 +43,33 @@ def about(request):
 def contact(request):
     return render(request, 'app/contact.html')
 
+@login_required
 def shop(request):
     items = Item.objects.all().order_by('-created_at')  # Newest first
-    return render(request, 'app/shop.html', {'items': items})
+    user_points = request.user.profile.points if hasattr(request.user, 'profile') else 0
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            item_id = data.get('item_id')
+            if not item_id:
+                return JsonResponse({'status': 'error', 'message': 'Item ID is required'})
+            item = Item.objects.get(id=item_id)
+            if user_points < item.price:
+                return JsonResponse({'status': 'error', 'message': 'Not enough points'})
+            profile = request.user.profile
+            profile.points -= item.price
+            profile.save()
+            return JsonResponse({'status': 'success', 'message': 'Item purchased successfully', 'new_points': profile.points})
+        except Item.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Item not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Server error: {str(e)}'})
+    return render(request, 'app/shop.html', {'items': items, 'user_points': user_points})
+
+@login_required
+def top_participants(request):
+    profiles = Profile.objects.filter(role='participant').order_by('-total_points_earned')
+    return render(request, 'app/top_participants.html', {'profiles': profiles})
 
 def logout_view(request):
     logout(request)
@@ -175,6 +199,11 @@ def api_join_event(request):
             if EventRegistration.objects.filter(user=request.user, event=event).exists():
                 return JsonResponse({'status': 'error', 'message': 'You are already registered'})
             EventRegistration.objects.create(user=request.user, event=event)
+            # Начисление очков
+            profile = request.user.profile
+            profile.points += 200
+            profile.total_points_earned += 200
+            profile.save()
             return JsonResponse({'status': 'success', 'message': 'Successfully registered for the event'})
         except Event.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Event not found'})

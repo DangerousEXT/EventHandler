@@ -1,0 +1,122 @@
+{% extends "app/layout.html" %}
+{% load static %}
+{% block content %}
+<div class="top-participants-container">
+    <h2>Top Participants</h2>
+    <div class="top-bar">
+        <div class="search-container">
+            <input type="text" id="participant-search" placeholder="Search by username..." onkeyup="searchParticipants()">
+            <span class="search-icon" onclick="searchParticipants()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </span>
+        </div>
+    </div>
+    <div class="participants-list">
+        {% for profile in profiles %}
+        <div class="participant-card" data-username="{{ profile.user.username|lower }}">
+            <h4>{{ profile.user.username }}</h4>
+            <p><strong>Total Points:</strong> {{ profile.total_points_earned }}</p>
+        </div>
+        {% empty %}
+        <div class="no-participants">No participants yet :-(</div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .top-participants-container {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        max-width: 800px;
+        margin: 20px auto;
+    }
+
+    h2 {
+        color: #1E40AF;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .top-bar {
+        display: flex;
+        justify-content: center;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+
+    .search-container {
+        position: relative;
+        width: 300px;
+    }
+
+    #participant-search {
+        width: 100%;
+        padding: 10px 1px 10px 4px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #1E40AF;
+        font-size: 16px;
+    }
+
+        #participant-search:focus {
+            outline: none;
+            border-color: #3B82F6;
+        }
+
+    .search-icon {
+        position: absolute;
+        right: -2px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+    }
+
+    .participants-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .participant-card {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 6px;
+        text-align: center;
+    }
+
+        .participant-card h4 {
+            color: #1E40AF;
+            margin-bottom: 10px;
+        }
+
+        .participant-card p {
+            color: #3B82F6;
+            font-size: 14px;
+        }
+
+    .no-participants {
+        color: #EF4444;
+        font-size: 18px;
+        text-align: center;
+    }
+</style>
+
+<script>
+    function searchParticipants() {
+        const input = document.getElementById('participant-search').value.toLowerCase();
+        const participants = document.querySelectorAll('.participant-card');
+        participants.forEach(participant => {
+            const username = participant.getAttribute('data-username');
+            participant.style.display = username.includes(input) ? '' : 'none';
+        });
+    }
+</script>
+{% endblock %}
