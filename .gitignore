@@ -9,6 +9,7 @@ __pycache__/
 local_settings.py  
 db.sqlite3
 db.sqlite3-journal
+.sqlite
 
 ### MySQL ###
 *.dump
@@ -17,6 +18,8 @@ db.sqlite3-journal
 
 ### VSCode ###
 .vscode/
+.wsuo
+.suo
 
 ### Виртуальные окружения и env-файлы ###
 .env
