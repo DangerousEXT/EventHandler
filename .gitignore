@@ -17,6 +17,7 @@ db.sqlite3-journal
 /mysql_data/
 
 ### VSCode ###
+.vs/
 .vscode/
 .wsuo
 .suo
